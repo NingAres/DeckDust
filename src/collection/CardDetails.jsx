@@ -3,16 +3,41 @@ import Modal from '../components/Modal.jsx';
 import CardArt from './CardArt.jsx';
 import { bestQuality, CLASSES, QUALITIES, RARITIES, TYPES, SET_NAMES, requiredCopies, ownedCount, textOnly } from './model.js';
 import PackArt from '../packs/PackArt.jsx';
+import ClassEmblem from '../components/ClassEmblem.jsx';
+
+function CardDescription({ text = '' }) {
+  const tokens = text.split(/(<\/?b>|<br\s*\/?\s*>)/gi);
+  let bold = false;
+  return tokens.map((token, index) => {
+    if (/^<b>$/i.test(token)) { bold = true; return null; }
+    if (/^<\/b>$/i.test(token)) { bold = false; return null; }
+    if (/^<br\s*\/?\s*>$/i.test(token)) return <br key={index} />;
+    const content = token.replace(/<[^>]*>/g, '').replace(/\[x\]/g, '').replace(/\$(\d+)/g, '$1');
+    // Card catalog text is not consistently marked up: some sources provide
+    // <b> tags, while others only provide plain rules text. Emphasize common
+    // Hearthstone keywords in either form, without interpreting arbitrary HTML.
+    const keywordPattern = /(嘲讽|战吼|亡语|突袭|圣盾|风怒|剧毒|吸血|冻结|沉默|发现|抉择|连击|奥秘|法术迸发|磁力|超杀|回响|复生|腐蚀|注能|锻造|快枪|挖掘|地标|兆示)/g;
+    const parts = content.split(keywordPattern);
+    return parts.map((part, partIndex) => {
+      const isKeyword = keywordPattern.test(part);
+      keywordPattern.lastIndex = 0;
+      const key = `${index}-${partIndex}`;
+      return bold || isKeyword ? <strong key={key}>{part}</strong> : <span key={key}>{part}</span>;
+    });
+  });
+}
 
 export default function CardDetails({ card, preferredQuality, onClose }) {
   const [quality, setQuality] = useState(preferredQuality || bestQuality(card));
-  const classNames = (card.classes || [card.cardClass]).map(key => CLASSES.find(([value]) => key === value)?.[1] || key).join(' / ');
+  const classKeys = card.classes?.length ? card.classes : [card.cardClass || 'NEUTRAL'];
+  const classNames = classKeys.map(key => CLASSES.find(([value]) => key === value)?.[1] || key).join(' / ');
+  const classDisplayName = classKeys.length > 2 ? `多职业（${classKeys.length}）` : classNames;
   const total = ownedCount(card);
   return <Modal title={card.name} onClose={onClose} className="card-detail-modal">
     <div className="card-details"><div className="detail-art-column"><div className={`detail-art quality-${quality}`}><CardArt card={card} quality={quality} detail /></div></div>
       <div className="detail-info">
-        <p className="detail-class">{classNames} · {RARITIES[card.rarity]} · {TYPES[card.type]}</p>
-        <p className="card-rules">{textOnly(card.text) || '这张卡牌没有额外描述。'}</p>
+        <div className="detail-class"><span className="detail-class-icons" role="img" aria-label={`所属职业：${classNames}`} title={classNames}>{classKeys.map(key => <ClassEmblem key={key} cardClass={key} />)}</span><div className="detail-class-meta"><span>{classDisplayName}</span><span aria-hidden="true">·</span><span>{RARITIES[card.rarity]}</span><span aria-hidden="true">·</span><span>{TYPES[card.type]}</span></div></div>
+        <p className="card-rules">{card.text ? <CardDescription text={card.text} /> : '这张卡牌没有额外描述。'}</p>
         <dl className="card-facts"><div><dt>法力消耗</dt><dd>{card.cost || 0}</dd></div>
           {card.attack !== undefined ? <div><dt>攻击力</dt><dd>{card.attack}</dd></div> : null}
           {card.health !== undefined ? <div><dt>生命值</dt><dd>{card.health}</dd></div> : null}

@@ -48,6 +48,16 @@ export default function App() {
   const startupSyncStarted = useRef(false);
   const query = useDeferredValue(filters.query);
   useEffect(() => {
+    const id = filters.query.trim();
+    if (!/^\\d+$/.test(id) || !catalog.length) return;
+    const card = catalog.find(entry => String(entry.id) === id) || catalog.find(entry => String(entry.dbfId) === id);
+    if (!card) return;
+    const classes = card.classes?.length ? card.classes : [card.cardClass];
+    if (classes.length !== 1 || !classes[0] || classes[0] === 'NEUTRAL') return;
+    setFilters(previous => previous.class === classes[0] ? previous : { ...previous, class: classes[0] });
+    setPage(0);
+  }, [filters.query, catalog]);
+  useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setError('');
     Promise.all([request('catalog', undefined, controller.signal), request('collection', undefined, controller.signal),

@@ -26,14 +26,18 @@ function DustBreakdown({ kind, value, entries, craftEntries = [], loading }) {
     rarity,
     count: allEntries.reduce((sum, entry) => sum + ((entry.card?.rarity || 'COMMON') === rarity ? (entry.missing || 0) : 0), 0),
   })).filter(item => item.count > 0);
-  const renderEntries = list => list.length ? <div className="dust-tooltip-grid">
+  const renderEntries = (list, upgradeToGolden = false) => list.length ? <div className="dust-tooltip-grid">
     {list.map(entry => {
       const unowned = entry.owned === 0;
       const rarity = entry.card?.rarity || 'COMMON';
       const amount = entry.missing || 0;
-      return <div className={`dust-breakdown-card ${!golden && (entry.missing > 0 || unowned) ? 'is-missing' : ''}`} key={entry.id} title={`${entry.name} · ${rarityLabels[rarity] || '普通'} ×${amount}`}>
-        {entry.card ? <PackCardArt card={entry.card} quality={golden ? 'golden' : 'normal'} /> : <div className="dust-unknown-card">未知卡牌</div>}
-        <div className="dust-breakdown-info"><b>{entry.name}</b><span><PackSymbol rarity={rarityIcons[rarity] || 'common'} golden={golden} />{rarityLabels[rarity] || '普通'}</span></div>
+      const ownedCounts = entry.card?.counts || [];
+      const displayQuality = upgradeToGolden && (ownedCounts[0] || 0) > 0 ? 'normal'
+        : ['diamond', 'signature', 'golden', 'normal'].find((quality, index) => ownedCounts[{ diamond: 2, signature: 3, golden: 1, normal: 0 }[quality]] > 0) || 'normal';
+      const missingStyle = golden ? unowned : entry.missing > 0 || unowned;
+      return <div className={`dust-breakdown-card ${missingStyle ? 'is-missing' : ''}`} key={entry.id} title={`${entry.name} · ${rarityLabels[rarity] || '普通'} ×${amount}`}>
+        {entry.card ? <PackCardArt card={entry.card} quality={displayQuality} /> : <div className="dust-unknown-card">未知卡牌</div>}
+        <div className="dust-breakdown-info"><b>{entry.name}</b><span><PackSymbol rarity={rarityIcons[rarity] || 'common'} golden={displayQuality === 'golden'} signature={displayQuality === 'signature'} diamond={displayQuality === 'diamond'} />{rarityLabels[rarity] || '普通'}</span></div>
         <strong className="dust-breakdown-count">×{amount}</strong>
       </div>;
     })}
@@ -116,9 +120,11 @@ function DustBreakdown({ kind, value, entries, craftEntries = [], loading }) {
   return <div className={`dust ${golden ? 'golden-dust' : 'normal-dust'} dust-breakdown ${golden ? 'golden-breakdown' : 'missing-breakdown'}`}
     onMouseEnter={event => showTooltip(event.currentTarget)} onFocus={event => showTooltip(event.currentTarget)} onMouseLeave={event => {
       clearTimeout(tooltipTimer.current);
+      if (event.relatedTarget?.closest?.('.pack-card-lightbox')) return;
       if (!event.currentTarget.contains(document.activeElement)) setOpen(false);
     }} onBlur={event => {
-      if (!event.currentTarget.contains(event.relatedTarget)) hideTooltip();
+      const nextTarget = event.relatedTarget;
+      if (!event.currentTarget.contains(nextTarget) && !nextTarget?.closest?.('.pack-card-lightbox')) hideTooltip();
     }}>
     <button type="button" className="dust-value" aria-label={`${label} ${loading && !golden ? '—' : value.toLocaleString()}`}
       aria-expanded={open} aria-describedby={open ? tooltipId : undefined} title="悬浮半秒或点击查看卡牌明细" onClick={openTooltipImmediately}
@@ -139,10 +145,10 @@ function DustBreakdown({ kind, value, entries, craftEntries = [], loading }) {
         {raritySummary.map(item => <span key={item.rarity} title={`${rarityLabels[item.rarity]} ×${item.count}`}>
           <PackSymbol rarity={rarityIcons[item.rarity]} golden={golden} /><b>×{item.count}</b>
         </span>)}
-        <strong className="dust-breakdown-total" title="所需粉尘"><PackSymbol rarity="dust" />{value.toLocaleString()} <small>尘</small></strong>
+        <strong className="dust-breakdown-total" title="缺少的合成粉尘"><span className="dust-deficit-label">缺</span><PackSymbol rarity="dust" />{value.toLocaleString()} <small>尘</small></strong>
       </div>}
       {loading ? <div className="dust-tooltip-empty">卡牌资料载入中…</div> : golden ? <div className="golden-card-lists">
-        <section><h4>待镀金卡清单 <small>{entries.reduce((sum, entry) => sum + entry.missing, 0)} 张</small></h4>{renderEntries(entries)}</section>
+        <section><h4>待镀金卡清单 <small>{entries.reduce((sum, entry) => sum + entry.missing, 0)} 张</small></h4>{renderEntries(entries, true)}</section>
         <section><h4>待合成金卡清单 <small>{craftEntries.reduce((sum, entry) => sum + entry.missing, 0)} 张</small></h4>{renderEntries(craftEntries)}</section>
       </div> : entries.length ? renderEntries(entries) : <div className="dust-tooltip-empty">没有缺卡</div>}
     </div>}
