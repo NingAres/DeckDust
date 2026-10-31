@@ -1,0 +1,36 @@
+node_modules/
+web-dist/
+__pycache__/
+build/
+dist/
+.env
+*.log
+
+# Local user data, exports, account sessions, and backup material
+data/
+collection_export*.json
+collection_detail.json
+hearthstone_collection.db
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+hsreplay-session.bin
+cloud-backup.json
+HSReplayProfile/
+card-art/
+
+# User supplied reference crops are not cleared for redistribution
+assets/mana-crystals/
+assets/native-ui/class-emblems/
+assets/native-ui/extracted/
+assets/native-ui/extracted-class-symbols/
+assets/ui-skin/
+design-system/deck-dust/collection-concept.png
+
+# Local/editor/OS metadata and packaged application output
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.spec.bak

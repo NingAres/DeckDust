@@ -1,0 +1,90 @@
+/* Match the prototype: expansion, mana and search/actions share one footer row. */
+#collection-view>.filters-bottom{display:grid;grid-template-columns:minmax(170px,220px) minmax(380px,.85fr) minmax(430px,1.7fr);grid-template-rows:1fr;align-items:center;gap:10px;height:88px;min-height:88px;padding:6px 12px}
+#collection-view>.filters-bottom .expansion-control{grid-column:auto;grid-row:auto;width:100%;max-width:190px;height:56px;padding:3px 27px 3px 45px}
+#collection-view>.filters-bottom .set-selector-art{left:0;top:9px;width:36px;height:36px}
+#collection-view>.filters-bottom .set-select{height:38px;padding:0 5px;appearance:auto;border:0;border-bottom:1px solid #b28e51;border-radius:0;background:transparent;color:#f0d9a7;font-size:13px}
+#collection-view>.filters-bottom .mana-row{grid-column:auto;grid-row:auto;justify-content:center;gap:2px}
+#collection-view .filters-bottom .mana.active{outline:none;border:0;background:transparent;box-shadow:none;transform:none}
+#collection-view .filters-bottom .mana.active img{filter:drop-shadow(0 0 4px #fff) drop-shadow(0 0 7px #ffffffb3) brightness(1.12)}
+#collection-view .filters-bottom .mana:focus-visible{outline:none;box-shadow:none}
+#collection-view .filters-bottom .mana:focus-visible img{filter:drop-shadow(0 0 4px #fff) drop-shadow(0 0 7px #ffffffb3) brightness(1.12)}
+#collection-view>.filters-bottom .mana{width:44px;height:50px}
+#collection-view>.filters-bottom .mana img{width:44px;height:49px}
+#collection-view>.filters-bottom .mana[data-mana='7+']{width:56px}
+#collection-view>.filters-bottom .mana-plus{top:15px;right:0;font-size:20px}
+#collection-view>.filters-bottom .collection-tools{grid-column:auto;display:grid;grid-template-columns:minmax(190px,220px) auto;grid-template-rows:42px;justify-content:end;align-items:center;gap:0 clamp(12px,1.3vw,22px);min-width:0}
+#collection-view>.filters-bottom .search-box{grid-column:auto;grid-row:auto;width:100%;height:42px;max-width:220px;margin:0;gap:8px;padding:0 11px;border-radius:12px}
+#collection-view>.filters-bottom .search-box .native-search{height:100%;font:700 15px var(--font-ui);padding:0;background:transparent}
+#collection-view>.filters-bottom .filter-actions{display:flex;flex-wrap:nowrap;justify-content:flex-end;align-items:center;height:42px;gap:clamp(5px,.55vw,9px);min-width:0}
+#collection-view>.filters-bottom .rarity-select{flex:0 1 120px;min-width:105px;height:30px;padding:0 6px;border:1px solid #a8814b;border-radius:5px;background:linear-gradient(#634725,#352313);color:#f0d9a7;font-size:12px}
+#collection-view>.filters-bottom .owned-toggle{gap:4px;white-space:nowrap;color:#e1cc9c;font-size:11px}
+#collection-view>.filters-bottom .owned-toggle input{margin:0;accent-color:#d8b565}
+#collection-view>.filters-bottom .more-filter{position:relative;flex:none;white-space:nowrap;min-height:30px;height:30px;padding:3px 9px;font-size:11px}
+.filter-indicator{position:absolute;top:-3px;right:-3px;width:7px;height:7px;border:1px solid #3d2a14;border-radius:50%;background:#f4ce75}
+#collection-view>.filters-bottom .collection-count{display:inline;min-width:0;margin:0;white-space:nowrap;color:#dec995;font-size:10px}
+@media(max-width:1300px) and (min-width:851px){
+  #collection-view>.filters-bottom{grid-template-columns:minmax(135px,165px) minmax(290px,.8fr) minmax(390px,1.5fr);gap:7px;padding:5px 8px}
+  #collection-view>.filters-bottom .collection-tools{grid-template-columns:minmax(120px,165px) auto;column-gap:8px}
+  #collection-view>.filters-bottom .mana,#collection-view>.filters-bottom .mana img{width:34px;height:40px}
+  #collection-view>.filters-bottom .mana[data-mana='7+']{width:44px}
+  #collection-view>.filters-bottom .mana-plus{top:11px;font-size:17px}
+  #collection-view>.filters-bottom .filter-actions{gap:5px}
+  #collection-view>.filters-bottom .rarity-select{min-width:95px;font-size:11px}
+  #collection-view>.filters-bottom .owned-toggle{font-size:10px}
+  #collection-view>.filters-bottom .collection-count{display:none}
+}
+@media(max-width:1000px) and (min-width:851px){
+  #collection-view>.filters-bottom{grid-template-columns:minmax(130px,.65fr) minmax(290px,1.35fr);grid-template-rows:40px 37px;height:auto;min-height:90px;gap:4px 8px}
+  #collection-view>.filters-bottom .expansion-control{grid-column:1;grid-row:1}
+  #collection-view>.filters-bottom .mana-row{grid-column:2;grid-row:1}
+  #collection-view>.filters-bottom .mana,#collection-view>.filters-bottom .mana img{width:29px;height:36px}
+  #collection-view>.filters-bottom .mana[data-mana='7+']{width:36px}
+  #collection-view>.filters-bottom .collection-tools{grid-column:1/-1;grid-row:2;grid-template-columns:minmax(140px,1fr) auto;column-gap:8px}
+  #collection-view>.filters-bottom .search-box{max-width:none}
+  #collection-view>.filters-bottom .more-filter{padding-inline:5px}
+}
+@media(max-width:850px){
+  #collection-view>.filters-bottom{grid-template-columns:minmax(110px,1fr) auto;grid-template-rows:40px auto;gap:4px;height:auto;min-height:0;padding:5px 7px}
+  #collection-view>.filters-bottom .expansion-control{grid-column:1;grid-row:1;max-width:220px;height:40px;padding:3px 0 3px 30px}
+  #collection-view>.filters-bottom .set-selector-art{width:27px;height:27px;top:6px}
+  #collection-view>.filters-bottom .set-select{height:30px;font-size:11px}
+  #collection-view>.filters-bottom .mana-row{grid-column:2;grid-row:1;gap:0}
+  #collection-view>.filters-bottom .mana,#collection-view>.filters-bottom .mana img{width:28px;height:34px}
+  #collection-view>.filters-bottom .mana[data-mana='7+']{width:35px}
+  #collection-view>.filters-bottom .mana-plus{top:8px;font-size:15px}
+  #collection-view>.filters-bottom .collection-tools{grid-column:1/-1;grid-row:2;grid-template-columns:minmax(120px,1fr) auto;grid-template-rows:37px;gap:6px;justify-content:stretch}
+  #collection-view>.filters-bottom .search-box{height:37px;max-width:none;padding:0 7px}
+  #collection-view>.filters-bottom .search-box .native-search{font-size:12px}
+  #collection-view>.filters-bottom .filter-actions{height:37px;gap:5px}
+  #collection-view>.filters-bottom .rarity-select{min-width:88px;height:28px;font-size:10px}
+  #collection-view>.filters-bottom .owned-toggle{font-size:10px}
+  #collection-view>.filters-bottom .more-filter{height:28px;min-height:28px;padding:3px 5px;font-size:10px}
+  #collection-view>.filters-bottom .collection-count{display:none}
+}
+@media(max-width:600px){
+  #collection-view>.filters-bottom{grid-template-columns:1fr;grid-template-rows:32px 35px auto}
+  #collection-view>.filters-bottom .expansion-control{grid-column:1;grid-row:1;height:32px}
+  #collection-view>.filters-bottom .set-selector-art{top:2px}
+  #collection-view>.filters-bottom .mana-row{grid-column:1;grid-row:2;justify-content:space-between}
+  #collection-view>.filters-bottom .collection-tools{grid-column:1;grid-row:3;grid-template-columns:1fr;grid-template-rows:34px 31px;gap:4px}
+  #collection-view>.filters-bottom .search-box{height:34px;max-width:none}
+  #collection-view>.filters-bottom .filter-actions{height:31px;justify-content:space-between}
+  #collection-view>.filters-bottom .rarity-select{flex:1;max-width:110px}
+}
+
+/* Use the collection panel's real width: desktop WebViews can be heavily DPI-scaled. */
+#collection-view{container-type:inline-size;container-name:collection-panel}
+@container collection-panel (min-width:735px) and (max-width:850px){
+  #collection-view>.filters-bottom{grid-template-columns:minmax(120px,140px) minmax(230px,.75fr) minmax(365px,1.5fr);grid-template-rows:1fr;align-items:center;gap:6px;height:88px;min-height:88px;padding:5px 7px}
+  #collection-view>.filters-bottom .expansion-control{grid-column:auto;grid-row:auto;width:100%;max-width:140px;height:40px;padding:3px 18px 3px 30px}
+  #collection-view>.filters-bottom .set-selector-art{top:6px;width:27px;height:27px}
+  #collection-view>.filters-bottom .set-select{height:30px;font-size:10px}
+  #collection-view>.filters-bottom .mana-row{grid-column:auto;grid-row:auto;justify-content:center;gap:0}
+  #collection-view>.filters-bottom .collection-tools{grid-column:auto;grid-row:auto;grid-template-columns:minmax(120px,1fr) auto;grid-template-rows:37px;gap:5px;justify-content:stretch}
+  #collection-view>.filters-bottom .search-box{height:37px;max-width:none;padding:0 6px}
+  #collection-view>.filters-bottom .search-box .native-search{font-size:12px}
+  #collection-view>.filters-bottom .filter-actions{height:37px;gap:4px}
+  #collection-view>.filters-bottom .rarity-select{min-width:80px;height:28px;padding-inline:4px;font-size:10px}
+  #collection-view>.filters-bottom .owned-toggle{gap:3px;font-size:9px}
+  #collection-view>.filters-bottom .more-filter{height:28px;min-height:28px;padding:3px 4px;font-size:9px}
+}

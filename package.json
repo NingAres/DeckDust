@@ -1,0 +1,21 @@
+{
+  "name": "deck-dust",
+  "version": "0.1.10",
+  "private": false,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "dev:server": "python collection_proxy.py --port 8766",
+    "build": "vite build",
+    "test": "node --test tests/*.test.js",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.0.4",
+    "vite": "^7.1.7"
+  }
+}

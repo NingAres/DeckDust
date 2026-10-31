@@ -1,0 +1,21 @@
+# Deck Dust 项目约定
+
+修改本项目之前，阅读 `DEVELOPMENT.md`；涉及功能规则时，同时阅读 `PROJECT_REQUIREMENTS.md`。涉及 Neon 连接、备份、同步、凭据或恢复时，必须遵守根目录 `CLOUD_BACKUP.md`，按需查看 `CLOUD_OPERATIONS.md`。`PROJECT_REQUIREMENTS.md` 的“历史实现状态”用于追溯，当前交付规则以 `DEVELOPMENT.md` 为准。
+
+## 素材统一存放（2026-10-27 用户确认）
+
+- 所有随应用交付的静态素材统一存放在项目根目录 `assets/`，包括新增、下载、生成和迁移的图片、SVG、图标、字体与纹理。
+- 在 `assets/` 内按用途分子目录，优先复用已有分类和文件；不再在 `src/`、设计目录或功能目录下另建素材库或嵌套 `assets/`。
+- 前端统一使用 `/assets/...` 引用。新增素材时保留来源、许可等说明，并检查已有素材，避免重复保存。
+- `web-dist/assets/` 是 Vite 构建生成的发布副本，由 `npm run build` 更新；手工维护只在根目录 `assets/` 进行。
+- 设计说明和不随应用交付的概念参考图放在 `design-system/deck-dust/`。运行时卡面缓存与用户数据库继续使用独立用户数据目录；历史用户导出和旧数据库归档在 `data/legacy/`。
+- 移动或重命名素材时，同步更新代码、样式、文档及构建引用。交付前运行 `npm run build`，核对资源路径与复制结果。
+
+## 交付与数据
+
+- 日常仅更新源码和网页构建；执行 EXE 打包前需用户明确同意，详见 `DEVELOPMENT.md`。
+- PyInstaller 只复用 `build/DeckDust/` 中间目录和 `dist/DeckDust/` 正式目录；唯一可交付入口为 `dist/DeckDust/DeckDust.exe`。每次打包直接覆盖这两个固定位置，不建立带日期、版本或 staging 后缀的副本，也不新增构建说明文档。若正式 EXE 正在运行并锁住输出，先停止打包并请用户正常关闭该程序，再覆盖原目录；不强制结束用户进程。
+- `package.json` 的 `version` 是应用唯一版本号来源。交付新构建时递增版本，并在“应用设置”标题后显示同一版本号；不要在其他文件复制维护版本值。
+- 保留用户收藏、套牌、历史记录和原始归档；数据迁移遵守 `DEVELOPMENT.md` 的备份、事务和临时测试目录规则。
+- 云端备份实现或运维须先阅读 `CLOUD_BACKUP.md`；配置、验证与排障步骤见 `CLOUD_OPERATIONS.md`。不得将 Neon 凭据写入仓库。
+
