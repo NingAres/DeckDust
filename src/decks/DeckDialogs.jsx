@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import Modal from '../components/Modal.jsx';
 import ClassEmblem from '../components/ClassEmblem.jsx';
 import { CLASSES, QUALITIES } from '../collection/model.js';
-import { HEROES, FORMATS, allocateDeckVariants, decodeDeck, deckEntryVariants, orderDeckVariantsForDisplay, encodeDeck, isDeckCompanion, parseDeckFile, deckClass } from './model.js';
+import { HEROES, FORMATS, allocateDeckVariants, decodeDeck, deckEntryVariants, orderDeckVariantsForDisplay, isDeckCompanion, parseDeckFile, deckClass } from './model.js';
 import { request } from '../collection/api.js';
+import { exportDeckPng } from './deckPngExport.js';
 
 function ImportDeck({ cards, cardReferences, controller, onReferences }) {
   const [code, setCode] = useState(''), [pending, setPending] = useState([]), [error, setError] = useState('');
@@ -66,19 +67,24 @@ function ImportDeck({ cards, cardReferences, controller, onReferences }) {
   </>;
 }
 
-export default function DeckDialogs({ controller, cards, cardReferences = [], onReferences = () => {}, onNotice }) {
+export default function DeckDialogs({ controller, cards, cardReferences = [], onReferences = () => {}, onNotice, artMode = 'cover' }) {
+  const [exportingPng, setExportingPng] = useState(false);
   const { dialog, setDialog, busy } = controller;
   if (!dialog) return null;
   const close = () => { if (!busy) setDialog(null); };
   const titles = { new: '新建套牌 · 选择职业', import: '导入套牌', delete: '删除套牌', switch: '切换构筑', export: '导出套牌' };
   const exportDeck = dialog.type === 'export' ? allocateDeckVariants(dialog.deck, cards) : null;
-  const exported = exportDeck ? `### ${exportDeck.name}\n${encodeDeck(exportDeck)}` : '';
   return <Modal title={titles[dialog.type]} onClose={close}><div className="deck-dialog">
     {dialog.type === 'new' && <><p>选择职业后进入我的收藏，直接点卡加入套牌。</p><div className="new-deck-classes">{CLASSES.filter(([key]) => HEROES[key]).map(([key, label]) => <button className="simple-button new-deck-class" key={key} onClick={() => controller.start({ name: `${label}新套牌`, hero: HEROES[key], format: 1, entries: [] })}><ClassEmblem cardClass={key} /><span>{label}</span></button>)}</div></>}
     {dialog.type === 'import' && <ImportDeck cards={cards} cardReferences={cardReferences} onReferences={onReferences} controller={controller} />}
     {dialog.type === 'switch' && <><p>当前套牌有未保存修改，切换将放弃这些修改。已保存记录仍会保留。</p><div className="deck-switch-actions"><button className="gold-button" onClick={() => controller.activate(dialog.next)}>放弃修改并切换</button><button className="simple-button" onClick={close}>继续当前构筑</button></div></>}
     {dialog.type === 'delete' && <><p>确定删除「{dialog.deck.name}」？此操作无法撤销。</p><button className="gold-button" disabled={busy} onClick={() => controller.deleteDeck(dialog.deck)}>{busy ? '删除中…' : '确认删除'}</button><button className="simple-button" disabled={busy} onClick={close}>取消</button></>}
-    {dialog.type === 'export' && <><label className="deck-import-label" htmlFor="export-deck-code">卡组代码</label><textarea id="export-deck-code" readOnly value={exported} onFocus={e => e.target.select()} /><div className="deck-import-actions"><button className="gold-button" onClick={async () => { try { await navigator.clipboard.writeText(exported); onNotice('卡组代码已复制。'); } catch { onNotice('请选中代码手动复制。'); } }}>复制代码</button><button className="simple-button" onClick={() => {
+    {dialog.type === 'export' && <><p>导出为两列卡组图片或套牌 JSON 文件。</p><div className="deck-import-actions"><button className="gold-button" disabled={exportingPng} onClick={async () => {
+      setExportingPng(true);
+      try { await exportDeckPng(dialog.deck, cards, artMode); onNotice('卡组 PNG 图片已导出。'); }
+      catch (error) { onNotice(error.message || 'PNG 图片导出失败。'); }
+      finally { setExportingPng(false); }
+    }}>{exportingPng ? '正在生成 PNG…' : '导出 PNG 图片'}</button><button className="simple-button" onClick={() => {
       const url = URL.createObjectURL(new Blob([JSON.stringify({ decks: [exportDeck] }, null, 2)], { type: 'application/json' }));
       const a = document.createElement('a'); a.href = url; a.download = `${exportDeck.name.replace(/[<>:"/\\|?*]/g, '_')}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     }}>导出 JSON 文件</button></div></>}

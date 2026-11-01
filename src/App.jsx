@@ -221,7 +221,7 @@ export default function App() {
     </main>
     {notice ? <div className="toast" role="status">{notice}<button aria-label="关闭通知" onClick={() => setNotice('')}><Icon name="close" /></button></div> : null}
     <span className="sr-only" role="status">{loading ? '正在载入收藏' : `已找到 ${result.length} 个卡牌版本，第 ${currentPage + 1} 页`}</span>
-    <DeckDialogs controller={deckController} cards={cards} cardReferences={deckController.cardReferences} onReferences={setCardReferences} onNotice={setNotice} />
+    <DeckDialogs controller={deckController} cards={cards} cardReferences={deckController.cardReferences} onReferences={setCardReferences} onNotice={setNotice} artMode={deckArtMode} />
     {modal === 'card' && card ? <CardDetails card={card} preferredQuality={selectedQuality || filters.quality} onClose={closeModal} /> : null}
     {modal === 'settings' ? <SyncDialog snapshot={snapshot} onUpdated={updated} onClose={closeModal} syncPreferences={syncPreferences} onSyncPreferencesChange={updateSyncPreferences} deckArtMode={deckArtMode} onDeckArtModeChange={updateDeckArtMode} onNotice={setNotice} /> : null}
     {modal === 'progress' ? <ProgressDialog cards={cards} meta={snapshot.meta} onClose={closeModal} onChooseSet={set => { updateFilters({ ...DEFAULT_FILTERS, set }); closeModal(); }} /> : null}
