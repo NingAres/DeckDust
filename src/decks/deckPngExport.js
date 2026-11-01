@@ -223,5 +223,5 @@ export async function exportDeckPng(deck, cards, artMode = 'cover') {
   ctx.fillStyle = '#e3dbc8'; ctx.font = codeFont;
   codeLines.forEach((line, index) => ctx.fillText(line, margin + 13, codeY + 34 + index * 17));
   const blob = await new Promise((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('无法生成 PNG 图片。')), 'image/png'));
-  await saveDeckExport(`${safeName(deck.name)}.png`, blob);
+  return saveDeckExport(`${safeName(deck.name)}.png`, blob);
 }

@@ -10,8 +10,8 @@ function ImportDeck({ cards, cardReferences, controller, onReferences }) {
   const [code, setCode] = useState(''), [pending, setPending] = useState([]), [error, setError] = useState('');
   const [selectedDeckIndex, setSelectedDeckIndex] = useState(0);
   const [lookupCards, setLookupCards] = useState(cardReferences);
-  const [exportFiles, setExportFiles] = useState([]), [showExportFiles, setShowExportFiles] = useState(false);
   const [reading, setReading] = useState(false);
+  const fileInput = useRef(null);
   const knownCards = useMemo(() => [...cards, ...lookupCards], [cards, lookupCards]);
   async function resolveReferences(decks) {
     const ids = [...new Set(decks.flatMap(deck => [...deck.entries.map(entry => entry.id), deck.hero, ...(deck.sideboards || []).map(item => item.id)])
@@ -38,26 +38,17 @@ function ImportDeck({ cards, cardReferences, controller, onReferences }) {
     event.target.value = '';
   }
   async function chooseDeckFile() {
-    setError(''); setReading(true);
-    try {
-      if (window.pywebview?.api?.choose_deck_json) {
+    setError('');
+    if (window.pywebview?.api?.choose_deck_json) {
+      setReading(true);
+      try {
         const selected = await window.pywebview.api.choose_deck_json();
         if (selected) await readText(selected.text);
-        return;
-      }
-      const result = await request('deck-exports');
-      setExportFiles(result.files || []); setShowExportFiles(true);
-    } catch (e) { setError(e.message || '无法读取套牌导出文件夹。'); }
-    finally { setReading(false); }
-  }
-  async function chooseExportedFile(name) {
-    setReading(true); setError('');
-    try {
-      const result = await request(`deck-exports?name=${encodeURIComponent(name)}`);
-      await readText(result.text);
-      setShowExportFiles(false);
-    } catch (e) { setError(e.message || '无法读取套牌 JSON 文件。'); }
-    finally { setReading(false); }
+      } catch (e) { setError(e.message || '无法打开套牌 JSON 文件。'); }
+      finally { setReading(false); }
+      return;
+    }
+    fileInput.current?.click();
   }
   return <>
     <p>粘贴游戏内卡组代码，或选择已有套牌 JSON 文件。导入会新增记录，保留原有套牌。</p>
@@ -66,8 +57,7 @@ function ImportDeck({ cards, cardReferences, controller, onReferences }) {
     <div className="deck-import-actions"><button className="simple-button" disabled={!code.trim() || controller.busy || reading} onClick={async () => {
       setReading(true);
       try { const deck = decodeDeck(code); setPending([deck]); setSelectedDeckIndex(0); setError(''); await resolveReferences([deck]); } catch(e) { setPending([]); setError(e.message); } finally { setReading(false); }
-    }}>解析卡组代码</button><button type="button" className="simple-button" disabled={controller.busy || reading} onClick={chooseDeckFile}>选择 JSON 文件</button><label className="simple-button deck-file-button">从其他位置选择<input type="file" accept=".json,application/json" disabled={controller.busy || reading} onChange={readFile} /></label></div>
-    {showExportFiles && <div className="deck-export-picker"><header><strong>套牌导出文件夹</strong><button type="button" onClick={() => setShowExportFiles(false)}>关闭</button></header>{exportFiles.length ? <ul>{exportFiles.map(name => <li key={name}><button type="button" disabled={reading} onClick={() => chooseExportedFile(name)}>{name}</button></li>)}</ul> : <p>文件夹中还没有 JSON 文件。你也可以从其他位置选择。</p>}</div>}
+    }}>解析卡组代码</button><button type="button" className="simple-button" disabled={controller.busy || reading} onClick={chooseDeckFile}>选择 JSON 文件</button><input ref={fileInput} className="deck-hidden-file-input" type="file" accept=".json,application/json" disabled={controller.busy || reading} onChange={readFile} /></div>
     {reading && <p role="status">正在读取文件…</p>}
     {(error || controller.error) && <p className="deck-error" role="alert">{error || controller.error}</p>}
     {!!pending.length && <div className="deck-import-preview"><div className="deck-import-preview-list"><h3>待导入 {pending.length} 套</h3>{pending.map((deck, i) => {
@@ -131,7 +121,10 @@ export default function DeckDialogs({ controller, cards, cardReferences = [], on
     {dialog.type === 'delete' && <><p>确定删除「{dialog.deck.name}」？此操作无法撤销。</p><button className="gold-button" disabled={busy} onClick={() => controller.deleteDeck(dialog.deck)}>{busy ? '删除中…' : '确认删除'}</button><button className="simple-button" disabled={busy} onClick={close}>取消</button></>}
     {dialog.type === 'export' && <><p>导出为两列卡组图片或套牌 JSON 文件。</p><div className="deck-import-actions"><button className="gold-button" disabled={exportingPng || savingJson} onClick={async () => {
       setExportingPng(true);
-      try { await exportDeckPng(dialog.deck, exportCards, artMode); onNotice('卡组 PNG 已保存到“套牌导出”文件夹。'); }
+      try {
+        const result = await exportDeckPng(dialog.deck, exportCards, artMode);
+        onNotice(result.destination === 'browser' ? '卡组 PNG 已下载。' : '卡组 PNG 已保存到“套牌导出”文件夹。');
+      }
       catch (error) { onNotice(error.message || 'PNG 图片导出失败。'); }
       finally { setExportingPng(false); }
     }}>{exportingPng ? '正在生成 PNG…' : '导出 PNG 图片'}</button><button className="simple-button" disabled={exportingPng || savingJson} onClick={async () => {
@@ -139,7 +132,8 @@ export default function DeckDialogs({ controller, cards, cardReferences = [], on
       try {
         const name = `${exportDeck.name.replace(/[<>:"/\\|?*]/g, '_')}.json`;
         const blob = new Blob([JSON.stringify({ decks: [exportDeck] }, null, 2)], { type: 'application/json' });
-        await saveDeckExport(name, blob); onNotice('套牌 JSON 已保存到“套牌导出”文件夹。');
+        const result = await saveDeckExport(name, blob);
+        onNotice(result.destination === 'browser' ? '套牌 JSON 已下载。' : '套牌 JSON 已保存到“套牌导出”文件夹。');
       } catch (error) { onNotice(error.message || 'JSON 文件导出失败。'); }
       finally { setSavingJson(false); }
     }}>{savingJson ? '正在保存 JSON…' : '导出 JSON 文件'}</button></div></>}

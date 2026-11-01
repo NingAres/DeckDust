@@ -137,9 +137,7 @@
 .deck-dialog textarea { height: 90px; resize: vertical; margin-bottom: 10px; }
 .deck-import-label { display: block; margin-bottom: 6px; }
 .deck-import-actions { display: flex; justify-content: flex-end; align-self: flex-end; width: 100%; gap: 10px; flex-wrap: wrap; }
-.deck-file-button { position: relative; display: inline-flex; align-items: center; overflow: hidden; cursor: pointer; }
-.deck-file-button input { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
-.deck-file-button:focus-within { outline: 2px solid #268ee2; outline-offset: 3px; }
+.deck-hidden-file-input { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); border: 0; }
 .deck-export-picker { width: 100%; max-height: 180px; margin-top: 10px; overflow: auto; border: 1px solid #a58248; border-radius: 6px; background: #eadbb8; color: #49351e; }
 .deck-export-picker>header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 10px; border-bottom: 1px solid #a5824866; font-size: 12px; }
 .deck-export-picker>header button,.deck-export-picker li button { border: 0; background: transparent; color: #65471f; cursor: pointer; }
