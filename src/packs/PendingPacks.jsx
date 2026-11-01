@@ -1,15 +1,26 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Modal from '../components/Modal.jsx';
 import CardArt from './PackCardArt.jsx';
 import PackArt from './PackArt.jsx';
 import { QualitySymbol } from './PackSymbol.jsx';
 import { PACK_TYPES, QUALITY_FIELDS } from './demo.js';
+import Icon from '../components/Icon.jsx';
 
 export default function PendingPacks({ pending, expansions, checked, setChecked, expansionId, setExpansionId, busy, onConfirm, onDiscard, onClose }) {
   const [choosingExpansion, setChoosingExpansion] = useState(false);
+  const [activePack, setActivePack] = useState(0);
+  const [switchDirection, setSwitchDirection] = useState(1);
   const selectedExpansion = expansions.find(item => item.id === expansionId);
   const selected = pending.filter(event => checked.includes(event.id));
   const counts = Object.fromEntries(QUALITY_FIELDS.map(([key]) => [key, selected.flatMap(event => event.cards).filter(entry => entry.qualityKey === key).length]));
+  const currentPackIndex = Math.min(activePack, Math.max(0, pending.length - 1));
+  const currentPack = pending[currentPackIndex];
+  useEffect(() => { setActivePack(index => Math.min(index, Math.max(0, pending.length - 1))); }, [pending.length]);
+  function changePack(nextPack) {
+    if (nextPack < 0 || nextPack >= pending.length || nextPack === currentPackIndex) return;
+    setSwitchDirection(nextPack > currentPackIndex ? 1 : -1);
+    setActivePack(nextPack);
+  }
   return <Modal title="待确认卡包" className="pack-dialog pack-queue-dialog" onClose={onClose}>
     {!pending.length ? <section className="pending-empty" aria-label="暂无待确认卡包"><span className="pending-empty-emblem"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><rect x="13" y="8" width="22" height="32" rx="2.2"/><path d="M13.5 15h21M13.5 33h21"/><path d="m24 18.5 5.2 5.2-5.2 5.2-5.2-5.2 5.2-5.2Z"/></svg></span><h3>暂无待确认卡包</h3><p>新检测到的开包记录会显示在这里，<br className="pending-empty-break" />确认后即可加入开包记录。</p></section> : <fieldset className="pending-expansion-picker">
       <legend>所属卡包</legend>
@@ -31,10 +42,7 @@ export default function PendingPacks({ pending, expansions, checked, setChecked,
       </> : <p className="pack-muted">请先在“扩展包管理”中添加卡包。</p>}
     </fieldset>}
     {pending.length > 0 ? <section className="pending-summary" aria-label="选中卡包总览"><strong>已选 {selected.length} 包 <small>共 {selected.reduce((sum, event) => sum + event.cards.length, 0)} 张</small></strong><div className="pending-quality-counts pack-detail-counts">{QUALITY_FIELDS.map(([key, label], index) => <div key={key} className={`pack-quality-detail quality-${key}`} style={{ gridColumn: key === 'signature' ? 5 : index % 4 + 1, gridRow: key === 'signature' ? '1 / span 2' : index < 4 ? 1 : 2 }}><span><QualitySymbol quality={key} />{label}</span><b>{counts[key] || '–'}</b></div>)}</div></section> : null}
-    <div className="pending-pack-list">{pending.map((event, index) => {
-      const packCounts = Object.fromEntries(QUALITY_FIELDS.map(([key]) => [key, event.cards.filter(entry => entry.qualityKey === key).length]));
-      return <article className="pending-pack" key={event.id}><header><label><input type="checkbox" checked={checked.includes(event.id)} onChange={change => setChecked(previous => change.target.checked ? [...previous, event.id] : previous.filter(id => id !== event.id))} />第 {index + 1} 包</label><time>{event.date.replace('T', ' ')}</time></header><div className="pending-pack-quality-counts pack-detail-counts">{QUALITY_FIELDS.map(([key, label], fieldIndex) => <div key={key} className={`pack-quality-detail quality-${key}`} style={{ gridColumn: key === 'signature' ? 5 : fieldIndex % 4 + 1, gridRow: key === 'signature' ? '1 / span 2' : fieldIndex < 4 ? 1 : 2 }}><span><QualitySymbol quality={key} />{label}</span><b>{packCounts[key] || '–'}</b></div>)}</div><div className="pack-card-line">{event.cards.map((entry, cardIndex) => <div className="pack-card-preview" key={cardIndex}><CardArt card={entry.card} quality={entry.quality} /><span><QualitySymbol quality={entry.qualityKey || 'common'} />{entry.card.name}</span></div>)}</div></article>;
-    })}</div>
+    {currentPack ? <section className="pending-pack-view" aria-label="待确认卡包详情"><header className="pending-pack-view-heading"><label><input type="checkbox" checked={checked.includes(currentPack.id)} onChange={change => setChecked(previous => change.target.checked ? [...previous, currentPack.id] : previous.filter(id => id !== currentPack.id))} />第 {currentPackIndex + 1} 包</label>{pending.length > 1 ? <><small>第 {currentPackIndex + 1} / {pending.length} 包</small><label className="pending-pack-picker"><span className="sr-only">快速选择卡包</span><select value={currentPackIndex} aria-label="快速选择卡包" onChange={event => changePack(Number(event.target.value))}>{pending.map((event, index) => <option key={event.id} value={index}>{index + 1}</option>)}</select><Icon name="right" /></label></> : null}<time>{currentPack.date.replace('T', ' ')}</time></header><div className="pending-pack-card-viewport"><div className="pack-card-line pack-card-line-switch" key={currentPack.id} style={{ '--pack-switch-offset': `${switchDirection * 12}px` }}>{currentPack.cards.map((entry, cardIndex) => <div className="pack-card-preview" key={`${entry.card.id}-${entry.qualityKey}-${cardIndex}`}><CardArt card={entry.card} quality={entry.quality} /><span><QualitySymbol quality={entry.qualityKey || 'common'} />{entry.card.name}</span></div>)}</div></div>{pending.length > 1 ? <nav className="record-pack-arrows pending-pack-arrows" aria-label="切换待确认卡包"><button type="button" className="record-pack-arrow" aria-label="上一包" disabled={currentPackIndex === 0} onClick={() => changePack(currentPackIndex - 1)}><Icon name="left" /></button><span className="sr-only" aria-live="polite">第 {currentPackIndex + 1} / {pending.length} 包</span><button type="button" className="record-pack-arrow" aria-label="下一包" disabled={currentPackIndex >= pending.length - 1} onClick={() => changePack(currentPackIndex + 1)}><Icon name="right" /></button></nav> : null}</section> : null}
     {pending.length > 0 ? <div className="dialog-actions"><button className="simple-button" disabled={busy || !checked.length} onClick={onDiscard}>放弃所选</button><button className="gold-button" disabled={busy || !checked.length || !expansionId} onClick={onConfirm}>确认加入记录</button></div> : null}
   </Modal>;
 }
