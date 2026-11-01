@@ -5,6 +5,12 @@ export function artworkContentBounds({ data, width, height }) {
     return data[offset + 3] < 8 || (Math.min(data[offset], data[offset + 1], data[offset + 2]) >= 235
       && Math.max(data[offset], data[offset + 1], data[offset + 2]) - Math.min(data[offset], data[offset + 1], data[offset + 2]) <= 20);
   };
+  const edgeBlank = (x, y) => {
+    const offset = (y * width + x) * 4;
+    const min = Math.min(data[offset], data[offset + 1], data[offset + 2]);
+    const max = Math.max(data[offset], data[offset + 1], data[offset + 2]);
+    return data[offset + 3] < 8 || (min >= 218 && max - min <= 34);
+  };
   const blankColumn = x => { for (let y = 0; y < height; y++) if (!blank(x, y)) return false; return true; };
   const blankRow = y => { for (let x = 0; x < width; x++) if (!blank(x, y)) return false; return true; };
   const maxX = Math.max(1, Math.floor(width * .45)), maxY = Math.max(1, Math.floor(height * .45));
@@ -20,9 +26,9 @@ export function artworkContentBounds({ data, width, height }) {
   if (height - bottom === maxY) bottom = height;
   // JPEG/WebP fringes and card art exports can leave a few colored pixels
   // inside an otherwise white border. Tolerate those only in a narrow band.
-  const mostlyBlankColumn = x => { let count = 0; for (let y = 0; y < height; y++) count += Number(blank(x, y)); return count / height >= .9; };
-  const mostlyBlankRow = y => { let count = 0; for (let x = 0; x < width; x++) count += Number(blank(x, y)); return count / width >= .9; };
-  const softMaxX = Math.max(2, Math.floor(width * .08)), softMaxY = Math.max(2, Math.floor(height * .08));
+  const mostlyBlankColumn = x => { let count = 0; for (let y = 0; y < height; y++) count += Number(edgeBlank(x, y)); return count / height >= .92; };
+  const mostlyBlankRow = y => { let count = 0; for (let x = 0; x < width; x++) count += Number(edgeBlank(x, y)); return count / width >= .92; };
+  const softMaxX = Math.max(2, Math.floor(width * .04)), softMaxY = Math.max(2, Math.floor(height * .04));
   while (left + 1 < softMaxX && mostlyBlankColumn(left) && mostlyBlankColumn(left + 1)) left++;
   while (width - right + 1 < softMaxX && mostlyBlankColumn(right - 1) && mostlyBlankColumn(right - 2)) right--;
   while (top + 1 < softMaxY && mostlyBlankRow(top) && mostlyBlankRow(top + 1)) top++;
