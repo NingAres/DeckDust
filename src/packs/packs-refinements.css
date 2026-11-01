@@ -365,9 +365,10 @@
 /* Compact, readable history area and a clearer selected pack summary. */
 .pack-main-paper>.pack-ledger-scroll{flex:0 1 auto;min-height:0;max-height:min(48vh,680px)}
 .pack-main-paper>.pack-ledger-scroll.pack-ledger-scroll-fill{flex:1 1 auto;min-height:0}
+.pack-ledger-scroll-fill{--pack-history-row-height:48px;overflow-x:auto;overflow-y:hidden}
 .pack-ledger-scroll-fill>.pack-history-table{height:100%}
-/* Auto batches keep rows between 48px and 53px, sharing available height evenly. */
-.pack-history-table tbody tr>td{height:48px;padding-block:2px}
+/* Keep the measured row capacity aligned with the rendered, border-box row height. */
+.pack-history-table tbody tr>td{box-sizing:border-box;height:var(--pack-history-row-height,48px);padding-block:2px}
 .pack-history-table .pack-record-select>.pack-expansion-art{width:27px;height:36px}
 .pack-history-table .pack-record-identity{gap:1px}
 .pack-history-table .pack-record-identity strong{font-size:12px;line-height:1.2}
@@ -488,7 +489,8 @@
 .record-card-pack-heading small{font-size:10px;color:#8b6b42}
 .modal.pack-cycle-dialog>.pack-ledger-scroll{height:auto;max-height:min(42vh,380px);min-height:0;flex:none}
 .modal.pack-cycle-dialog>.pack-ledger-scroll>.pack-history-table{height:auto}
-.pack-cycle-dialog .pack-history-table tbody tr:not(.pack-placeholder-row)>td,.pack-cycle-dialog .pack-placeholder-row>td{height:58px}
+.pack-cycle-dialog .pack-ledger-scroll-fill{--pack-history-row-height:58px;overflow-y:hidden}
+.pack-cycle-dialog .pack-history-table tbody tr:not(.pack-placeholder-row)>td,.pack-cycle-dialog .pack-placeholder-row>td{box-sizing:border-box;height:var(--pack-history-row-height,58px)}
 .pack-cycle-dialog .pack-placeholder-row>td{padding:0;background:#efe2c2;border-bottom:1px solid #cfbb943d}
 .pack-pity-hover-row{padding:7px 0 5px;border-bottom:1px solid #ad925e33}.pack-pity-hover-row>div:first-child{display:flex;align-items:center;justify-content:space-between;font-size:10px;line-height:1.2}
 .pack-pity-hover-row>div>span{display:flex;align-items:center;gap:5px}.pack-pity-hover-row .pack-symbol{width:16px;height:18px}.pack-pity-hover-row b{font-size:13px;color:#a65f20}.pack-pity-hover-row b small{font-size:9px;color:#795c35;font-weight:400}.pack-pity-hover-row .pity-track{height:6px;margin-top:4px}
