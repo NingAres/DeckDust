@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { flushSync } from 'react-dom';
 import packageInfo from '../../package.json';
 import Modal from '../components/Modal.jsx';
 import Icon from '../components/Icon.jsx';
@@ -17,13 +16,6 @@ export default function SyncDialog({ snapshot, onClose, onUpdated, syncPreferenc
   const [packSettings, setPackSettings] = useState(null);
   const [confirmRestore, setConfirmRestore] = useState(false);
   const fileSequence = useRef(0);
-  function transitionTabs(update) {
-    if (typeof document.startViewTransition !== 'function') {
-      update();
-      return;
-    }
-    document.startViewTransition(() => flushSync(update));
-  }
   const expiresAt = auth.expiresAt ? new Date(auth.expiresAt) : null;
   const validExpiry = expiresAt && !Number.isNaN(expiresAt.getTime());
   const expiryLabel = validExpiry
@@ -120,11 +112,11 @@ export default function SyncDialog({ snapshot, onClose, onUpdated, syncPreferenc
   }
   return <Modal title={<span className="settings-modal-title">应用设置 <small>v{packageInfo.version}</small></span>} onClose={onClose} className="sync-modal settings-modal">
     <div className="settings-sections" role="tablist" aria-label="设置类别">
-      <button type="button" role="tab" aria-selected={section === 'sync'} aria-controls="settings-panel-sync" id="settings-tab-sync" tabIndex={section === 'sync' ? 0 : -1} onClick={() => transitionTabs(() => setSection('sync'))}>收藏同步</button>
-      <button type="button" role="tab" aria-selected={section === 'packs'} aria-controls="settings-panel-packs" id="settings-tab-packs" tabIndex={section === 'packs' ? 0 : -1} onClick={() => transitionTabs(() => setSection('packs'))}>日志监控</button>
-      <button type="button" role="tab" aria-selected={section === 'art'} aria-controls="settings-panel-art" id="settings-tab-art" tabIndex={section === 'art' ? 0 : -1} onClick={() => transitionTabs(() => setSection('art'))}>卡组插画</button>
+      <button type="button" role="tab" aria-selected={section === 'sync'} aria-controls="settings-panel-sync" id="settings-tab-sync" tabIndex={section === 'sync' ? 0 : -1} onClick={() => setSection('sync')}>收藏同步</button>
+      <button type="button" role="tab" aria-selected={section === 'packs'} aria-controls="settings-panel-packs" id="settings-tab-packs" tabIndex={section === 'packs' ? 0 : -1} onClick={() => setSection('packs')}>日志监控</button>
+      <button type="button" role="tab" aria-selected={section === 'art'} aria-controls="settings-panel-art" id="settings-tab-art" tabIndex={section === 'art' ? 0 : -1} onClick={() => setSection('art')}>卡组插画</button>
     </div>
-    {section === 'sync' ? <div role="tabpanel" id="settings-panel-sync" aria-labelledby="settings-tab-sync" style={{ viewTransitionName: 'settings-content' }}>
+    {section === 'sync' ? <div key="sync" role="tabpanel" id="settings-panel-sync" aria-labelledby="settings-tab-sync" className="settings-tab-panel">
     <section className="sync-quick-settings" aria-label="快速同步设置">
       <fieldset className="sync-default-method"><legend>主界面「同步收藏」按钮</legend>
         <label className={syncPreferences.defaultMethod === 'hsreplay' ? 'selected' : ''}>
@@ -142,13 +134,13 @@ export default function SyncDialog({ snapshot, onClose, onUpdated, syncPreferenc
       if (!['ArrowLeft', 'ArrowRight'].includes(event.key) || busy) return;
       const keys = ['hsreplay', 'file', 'backup'];
       const next = keys[(keys.indexOf(tab) + (event.key === 'ArrowRight' ? 1 : 2)) % 3];
-      event.preventDefault(); transitionTabs(() => { setTab(next); setError(''); }); document.getElementById(`sync-tab-${next}`)?.focus();
+      event.preventDefault(); setTab(next); setError(''); document.getElementById(`sync-tab-${next}`)?.focus();
     }}>{[['hsreplay', 'HSReplay 同步'], ['file', '导入文件'], ['backup', '导出与恢复']].map(([key, name]) =>
       <button type="button" role="tab" aria-selected={tab === key} aria-controls={`sync-panel-${key}`} id={`sync-tab-${key}`} key={key} disabled={!!busy}
         tabIndex={tab === key ? 0 : -1}
-        onClick={() => transitionTabs(() => { setTab(key); setError(''); })}>{name}</button>)}
+        onClick={() => { setTab(key); setError(''); }}>{name}</button>)}
     </div>
-    <div role="tabpanel" id={`sync-panel-${tab}`} aria-labelledby={`sync-tab-${tab}`} className="sync-panel" style={{ viewTransitionName: 'sync-content' }}>
+    <div key={tab} role="tabpanel" id={`sync-panel-${tab}`} aria-labelledby={`sync-tab-${tab}`} className="sync-panel settings-tab-panel">
       {tab === 'file' ? <>
         <p>选择从 HDT / HSReplay 导出的收藏 JSON，预览后更新你的收藏。</p>
         <label className="file-picker"><span>选择收藏 JSON 文件</span><input type="file" accept=".json,application/json" aria-label="选择收藏 JSON 文件" disabled={!!busy} onChange={chooseFile} /></label>
@@ -195,7 +187,7 @@ export default function SyncDialog({ snapshot, onClose, onUpdated, syncPreferenc
               <>{['opening', 'waiting', 'importing'].includes(auth.phase) ? <button className="simple-button" disabled={!!busy} onClick={refreshAuth}>{busy === 'status' ? '正在检查…' : '我已完成登录，检查状态'}</button> : null}
                 <button className="gold-button" disabled={!!busy || auth.phase === 'loading' || ['opening', 'waiting', 'importing'].includes(auth.phase)} onClick={login}>{busy === 'login' ? '正在打开…' : ['opening', 'waiting', 'importing'].includes(auth.phase) ? '请在登录窗口继续…' : '登录 HSReplay 国服账号'}</button></>}
         </div>
-      </div> : null}
+    </div> : null}
       {tab === 'backup' ? <>
         <p>导出文件保留全部卡牌记录与品质数量，可重新导入。恢复功能会回到上次成功导入之前的收藏。</p>
         <div className="backup-actions"><button className="simple-button" onClick={exportCollection} disabled={!!busy || !Object.keys(snapshot.collection).length}>导出收藏 JSON</button>
@@ -205,7 +197,7 @@ export default function SyncDialog({ snapshot, onClose, onUpdated, syncPreferenc
       </> : null}
     </div>
       <p className="source-note">{snapshot.meta.source ? `当前来源：${snapshot.meta.source}` : '尚未导入收藏'}{snapshot.meta.importedAt ? ` · ${new Date(snapshot.meta.importedAt).toLocaleString('zh-CN')}` : ''}</p>
-    </div> : section === 'art' ? <div role="tabpanel" id="settings-panel-art" aria-labelledby="settings-tab-art" className="deck-art-preferences" style={{ viewTransitionName: 'settings-content' }}>
+    </div> : section === 'art' ? <div key="art" role="tabpanel" id="settings-panel-art" aria-labelledby="settings-tab-art" className="deck-art-preferences settings-tab-panel">
       <fieldset>
         <legend>卡组列表图片显示方式</legend>
         <label className={deckArtMode === 'cover' ? 'selected' : ''}>
@@ -218,7 +210,7 @@ export default function SyncDialog({ snapshot, onClose, onUpdated, syncPreferenc
         </label>
       </fieldset>
       <p className="help-text">此选择会立即应用并保存在本机，不影响已保存的套牌。</p>
-    </div> : <div role="tabpanel" id="settings-panel-packs" aria-labelledby="settings-tab-packs" className="settings-pack-panel" style={{ viewTransitionName: 'settings-content' }}>
+    </div> : <div key="packs" role="tabpanel" id="settings-panel-packs" aria-labelledby="settings-tab-packs" className="settings-pack-panel settings-tab-panel">
       {packSettings ? <LogSettings embedded settings={packSettings} onSave={savePackSettings} onClose={() => {}} onNotice={onNotice} /> : <p className="help-text">正在读取开包监控设置…</p>}
     </div>}
     {error ? <div className="error-message" role="alert">{error}</div> : null}

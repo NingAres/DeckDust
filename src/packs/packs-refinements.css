@@ -364,7 +364,9 @@
 
 /* Compact, readable history area and a clearer selected pack summary. */
 .pack-main-paper>.pack-ledger-scroll{flex:0 1 auto;min-height:0;max-height:min(48vh,680px)}
-.pack-main-paper>.pack-ledger-scroll.pack-ledger-scroll-fill{flex:0 1 auto;min-height:0}
+.pack-main-paper>.pack-ledger-scroll.pack-ledger-scroll-fill{flex:1 1 auto;min-height:0}
+.pack-ledger-scroll-fill>.pack-history-table{height:100%}
+.pack-history-table .pack-spacer-row>td{height:1px;padding:0;border:0;background:transparent}
 .selected-record-sheet .selected-record-body{grid-template-columns:minmax(260px,1.1fr) minmax(270px,1.2fr) minmax(190px,.9fr) auto;gap:16px;padding:13px 16px;min-height:118px}
 .selected-record-sheet .selected-record-body>.pack-selected-identity{gap:13px}
 .selected-record-sheet .selected-record-body .pack-selected-identity>.pack-expansion-art{width:52px;height:69px;flex:none}
@@ -425,9 +427,9 @@
 .pack-layout-wide .pack-cycle-table thead th:first-child,.pack-layout-wide .pack-full-overview thead th:first-child{z-index:6}
 .pack-layout-wide .pack-cycle-table td:first-child,.pack-layout-wide .pack-full-overview td:first-child{z-index:2}
 .pack-layout-wide .pack-set-identity .pack-expansion-art{width:48px;height:64px}
-.pack-layout-wide .pack-analysis-scroll,.pack-layout-wide .pack-overview-table{scroll-snap-type:y mandatory;scroll-padding-block:4px;scroll-behavior:smooth;overscroll-behavior-y:contain}
-.pack-layout-wide .pack-cycle-table tbody tr,.pack-layout-wide .pack-full-overview tbody tr{scroll-snap-align:end;scroll-snap-stop:normal}
-@media(prefers-reduced-motion:reduce){.pack-layout-wide .pack-analysis-scroll,.pack-layout-wide .pack-overview-table{scroll-behavior:auto}}
+.pack-layout-wide .pack-analysis-scroll{scroll-snap-type:y mandatory;scroll-padding-block:4px;scroll-behavior:smooth;overscroll-behavior-y:contain}
+.pack-layout-wide .pack-cycle-table tbody tr{scroll-snap-align:end;scroll-snap-stop:normal}
+.pack-layout-wide .pack-overview-table{scroll-snap-type:none;scroll-behavior:auto;overflow-anchor:none}
 
 .pending-expansion-disclosure{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows 260ms cubic-bezier(.2,0,0,1),opacity 160ms ease-out}
 .pending-expansion-disclosure.open{grid-template-rows:1fr;opacity:1}
@@ -435,7 +437,7 @@
 @media(prefers-reduced-motion:reduce){.pending-expansion-disclosure{transition:grid-template-rows 220ms ease-out,opacity 140ms ease-out!important}}
 
 /* Keep auto-pagination's observed viewport stable so rows and the selected summary do not jump. */
-.pack-main-paper>.pack-ledger-scroll.pack-ledger-scroll-fill{flex:0 1 auto;min-height:0}
+.pack-main-paper>.pack-ledger-scroll.pack-ledger-scroll-fill{flex:1 1 auto;min-height:0}
 .pack-main-paper>.selected-record-sheet{flex:none;margin-top:auto}
 .pack-layout:not(.pack-layout-wide) .pack-main-paper:has(>.selected-record-sheet)>.pack-paper-footer{margin-top:0}
 
