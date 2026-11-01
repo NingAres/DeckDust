@@ -9,18 +9,15 @@ const QUALITY_COLORS = { normal: '#c8b991', golden: '#f0c94c', diamond: '#8eeaff
 const safeName = name => String(name || '套牌').replace(/[<>:"/\\|?*]/g, '_').slice(0, 80);
 
 async function getArt(card, type = 'strip') {
-  if (!card?.id) return null;
-  try {
-    const first = await loadArt(card.id, type);
-    const prepared = await prepareDeckArtwork(first.url, first.quality === 'strip' ? {} : { stripType: card.type || 'SPELL' });
-    return await imageFromUrl(prepared);
-  } catch {
-    if (type === 'tile') return null;
+  const ids = [...new Set([card?.id, card?.dbfId].filter(Boolean))];
+  for (const id of ids) for (const quality of type === 'tile' ? ['tile', 'strip'] : ['strip', 'tile']) {
     try {
-      const fallback = await loadArt(card.id, 'tile');
-      return await imageFromUrl(await prepareDeckArtwork(fallback.url, { stripType: card.type || 'SPELL' }));
-    } catch { return null; }
+      const result = await loadArt(id, quality);
+      const prepared = await prepareDeckArtwork(result.url, result.quality === 'strip' ? {} : { stripType: card.type || 'SPELL' });
+      return await imageFromUrl(prepared);
+    } catch { /* Try the alternate art key and crop size before giving up. */ }
   }
+  return null;
 }
 
 function imageFromUrl(url) {
@@ -65,6 +62,22 @@ function craftingTotals(deck, cards) {
   return { normal, golden };
 }
 
+function inferExportClass(deck, cards) {
+  const mapped = deckClass(deck, cards);
+  if (mapped) return mapped;
+  const byId = new Map(cards.map(card => [card.dbfId, card]));
+  const scores = new Map();
+  for (const entry of deck.entries) {
+    const card = byId.get(entry.id);
+    for (const key of card?.classes || [card?.cardClass]) {
+      if (key && key !== 'NEUTRAL' && CLASSES.some(([name]) => name === key)) scores.set(key, (scores.get(key) || 0) + entry.count);
+    }
+  }
+  return [...scores].sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+}
+
+function loadStaticImage(src) { return imageFromUrl(src).catch(() => null); }
+
 function roundedRect(ctx, x, y, width, height, radius) {
   ctx.beginPath(); ctx.roundRect(x, y, width, height, radius);
 }
@@ -81,14 +94,14 @@ function drawCurve(ctx, curve, x, y, width, height) {
   });
 }
 
-function drawRow(ctx, row, image, x, y, width, height, mode) {
+function drawRow(ctx, row, image, rarityImage, x, y, width, height, mode) {
   roundedRect(ctx, x, y, width, height, 5);
   ctx.save(); ctx.clip();
   ctx.fillStyle = '#18222d'; ctx.fillRect(x, y, width, height);
   if (image && mode === 'layered') {
     ctx.save(); ctx.filter = 'blur(9px) saturate(.85)';
     ctx.drawImage(image, ...coverCrop(image, x - 8, y - 8, width + 16, height + 16, row.card?.type === 'MINION' ? .25 : .5)); ctx.restore();
-    const artWidth = width * .72;
+    const artWidth = width * .62;
     const layer = document.createElement('canvas'); layer.width = Math.ceil(artWidth); layer.height = height;
     const layerCtx = layer.getContext('2d');
     layerCtx.drawImage(image, ...coverCrop(image, 0, 0, artWidth, height, row.card?.type === 'MINION' ? .25 : .5));
@@ -97,7 +110,7 @@ function drawRow(ctx, row, image, x, y, width, height, mode) {
     layerCtx.globalCompositeOperation = 'destination-in'; layerCtx.fillStyle = mask; layerCtx.fillRect(0, 0, artWidth, height);
     ctx.drawImage(layer, x + width - artWidth, y);
   } else if (image) {
-    ctx.drawImage(image, ...coverCrop(image, x + width * .22, y, width * .78, height, row.card?.type === 'MINION' ? .25 : .5));
+    ctx.drawImage(image, ...coverCrop(image, x + width * .35, y, width * .65, height, row.card?.type === 'MINION' ? .25 : .5));
   }
   const overlay = ctx.createLinearGradient(x, y, x + width, y);
   overlay.addColorStop(0, '#101820f2'); overlay.addColorStop(.52, '#101820b8'); overlay.addColorStop(1, '#10182025');
@@ -108,30 +121,48 @@ function drawRow(ctx, row, image, x, y, width, height, mode) {
   ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
   ctx.fillStyle = '#9bdcff'; ctx.beginPath(); ctx.arc(x + 19, y + height / 2, 12, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#10202c'; ctx.font = '700 14px system-ui, sans-serif'; ctx.fillText(String(row.card?.cost ?? '?'), x + 19, y + height / 2 + 1);
-  ctx.textAlign = 'left'; ctx.fillStyle = '#fff2d5'; ctx.font = '600 14px system-ui, sans-serif';
+  const rarity = row.card?.rarity || 'FREE';
+  const rarityMeta = {
+    FREE: ['common', '免费'], COMMON: ['common', '普通'], RARE: ['rare', '稀有'],
+    EPIC: ['epic', '史诗'], LEGENDARY: ['legendary', '传说'],
+  }[rarity] || ['common', '未知'];
+  if (rarityImage) {
+    ctx.save(); ctx.globalAlpha = rarity === 'FREE' ? .72 : 1;
+    ctx.drawImage(rarityImage, x + 39, y + (height - 17) / 2, 17, 17); ctx.restore();
+  }
+  ctx.textAlign = 'left'; ctx.fillStyle = rarity === 'FREE' ? '#d4d0c8' : '#d8c89f'; ctx.font = '11px system-ui, sans-serif';
+  ctx.fillText(rarityMeta[1], x + 58, y + height / 2 + 1);
+  ctx.fillStyle = '#fff2d5'; ctx.font = '600 13px system-ui, sans-serif';
   const name = row.card?.name || `未知卡牌 #${row.id}`;
-  const maxNameWidth = width - 100;
+  const nameX = x + 94;
+  const maxNameWidth = width - 116;
   let displayName = name; while (displayName.length > 1 && ctx.measureText(displayName).width > maxNameWidth) displayName = `${displayName.slice(0, -2)}…`;
-  ctx.fillText(displayName, x + 39, y + height / 2 + 1);
+  ctx.fillText(displayName, nameX, y + height / 2 + 1);
   ctx.textAlign = 'right'; ctx.fillStyle = QUALITY_COLORS[row.quality] || '#fff0c8'; ctx.font = '700 15px system-ui, sans-serif';
   ctx.fillText('×1', x + width - 11, y + height / 2 + 1);
 }
 
 export async function exportDeckPng(deck, cards, artMode = 'cover') {
   const rows = deckRows(deck, cards);
-  const cls = deckClass(deck, cards);
+  const cls = inferExportClass(deck, cards);
   const hero = cards.find(card => card.dbfId === deck.hero) || cards.find(card => card.id === HERO_ART[cls]);
-  const heroArt = await getArt(hero, 'tile');
+  const [heroArt, classEmblem, dustIcon, ...rarityIcons] = await Promise.all([
+    getArt(hero, 'tile'),
+    loadStaticImage(`/assets/native-ui/class-emblems/${CLASSES.find(([key]) => key === cls)?.[2] || 'Neutral'}.png`),
+    loadStaticImage('/assets/pack-icons/dust.png'),
+    ...['common', 'rare', 'epic', 'legendary'].map(key => loadStaticImage(`/assets/pack-icons/${key}.png`)),
+  ]);
+  const rarityImages = new Map(['COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'FREE'].map((key, index) => [key, rarityIcons[key === 'FREE' ? 0 : index]]));
   const rowImages = new Map();
   await Promise.all([...new Set(rows.map(row => row.id))].map(async id => {
     const row = rows.find(item => item.id === id);
     rowImages.set(id, await getArt(row.card));
   }));
 
-  const width = 1200, margin = 28, gap = 18, columnWidth = (width - margin * 2 - gap) / 2;
-  const headerHeight = 178, rowHeight = 35, rowGap = 5, rowsPerColumn = Math.ceil(rows.length / 2);
+  const width = 960, margin = 24, gap = 16, columnWidth = (width - margin * 2 - gap) / 2;
+  const headerHeight = 160, rowHeight = 40, rowGap = 5, rowsPerColumn = Math.ceil(rows.length / 2);
   const height = Math.max(330, margin * 2 + headerHeight + rowsPerColumn * rowHeight + Math.max(0, rowsPerColumn - 1) * rowGap);
-  const scale = 2, canvas = document.createElement('canvas'); canvas.width = width * scale; canvas.height = height * scale;
+  const scale = 1, canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
   const ctx = canvas.getContext('2d'); ctx.scale(scale, scale);
   const bg = ctx.createLinearGradient(0, 0, width, height); bg.addColorStop(0, '#283b4e'); bg.addColorStop(1, '#172838'); ctx.fillStyle = bg; ctx.fillRect(0, 0, width, height);
   ctx.strokeStyle = '#d6b45f'; ctx.lineWidth = 2; ctx.strokeRect(10, 10, width - 20, height - 20);
@@ -140,6 +171,7 @@ export async function exportDeckPng(deck, cards, artMode = 'cover') {
   ctx.save(); roundedRect(ctx, avatarX, avatarY, avatarSize, avatarSize, 8); ctx.clip();
   ctx.fillStyle = '#18222d'; ctx.fillRect(avatarX, avatarY, avatarSize, avatarSize);
   if (heroArt) ctx.drawImage(heroArt, ...coverCrop(heroArt, avatarX, avatarY, avatarSize, avatarSize, .25));
+  else if (classEmblem) ctx.drawImage(classEmblem, avatarX + 13, avatarY + 13, avatarSize - 26, avatarSize - 26);
   ctx.restore(); ctx.strokeStyle = '#d9b85e'; ctx.lineWidth = 3; roundedRect(ctx, avatarX, avatarY, avatarSize, avatarSize, 8); ctx.stroke();
   ctx.fillStyle = '#f2d68f'; ctx.font = '700 24px system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   ctx.fillText(deck.name || '未命名套牌', margin + avatarSize + 18, margin + 28);
@@ -147,12 +179,17 @@ export async function exportDeckPng(deck, cards, artMode = 'cover') {
   ctx.fillStyle = '#ddc99e'; ctx.font = '15px system-ui, sans-serif';
   ctx.fillText(`${className}  ·  ${deck.format === 1 ? '狂野' : deck.format === 3 ? '经典' : '标准'}  ·  ${effectiveDeckTotal(deck)}/${deckLimit(deck)} 张`, margin + avatarSize + 18, margin + 54);
   const totals = craftingTotals(deck, cards);
-  ctx.font = '700 21px system-ui, sans-serif'; ctx.fillStyle = '#eee0c0';
-  ctx.fillText(`普通合成  ${totals.normal.toLocaleString()} 尘`, margin + avatarSize + 18, margin + 91);
-  ctx.fillStyle = '#ffd12d'; ctx.fillText(`金卡制作  ${totals.golden.toLocaleString()} 尘`, margin + avatarSize + 18, margin + 123);
+  const dustY = margin + 105, dustSize = 23;
+  if (dustIcon) ctx.drawImage(dustIcon, margin + avatarSize + 18, dustY - 18, dustSize, dustSize);
+  ctx.fillStyle = '#eee0c0'; ctx.font = '700 22px system-ui, sans-serif'; ctx.fillText(totals.normal.toLocaleString(), margin + avatarSize + 48, dustY);
+  if (dustIcon) {
+    ctx.save(); ctx.filter = 'sepia(1) saturate(5) hue-rotate(350deg)';
+    ctx.drawImage(dustIcon, margin + avatarSize + 172, dustY - 18, dustSize, dustSize); ctx.restore();
+  }
+  ctx.fillStyle = '#ffd12d'; ctx.fillText(totals.golden.toLocaleString(), margin + avatarSize + 202, dustY);
   const curve = Array(8).fill(0);
   rows.forEach(row => { curve[Math.min(7, row.card?.cost || 0)] += 1; });
-  drawCurve(ctx, curve, width - margin - 260, margin + 18, 260, 110);
+  drawCurve(ctx, curve, width - margin - 240, margin + 14, 240, 100);
   ctx.fillStyle = '#e9d59f'; ctx.font = '700 12px system-ui, sans-serif'; ctx.textAlign = 'right';
   ctx.fillText(`${rows.length} 张 · Deck Dust`, width - margin, margin + 149);
 
@@ -160,7 +197,7 @@ export async function exportDeckPng(deck, cards, artMode = 'cover') {
   rows.forEach((row, index) => {
     const column = Math.floor(index / rowsPerColumn), line = index % rowsPerColumn;
     const x = margin + column * (columnWidth + gap), y = startY + line * (rowHeight + rowGap);
-    drawRow(ctx, row, rowImages.get(row.id), x, y, columnWidth, rowHeight, artMode);
+    drawRow(ctx, row, rowImages.get(row.id), rarityImages.get(row.card?.rarity) || rarityImages.get('FREE'), x, y, columnWidth, rowHeight, artMode);
   });
   const blob = await new Promise((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('无法生成 PNG 图片。')), 'image/png'));
   const url = URL.createObjectURL(blob); const anchor = document.createElement('a');

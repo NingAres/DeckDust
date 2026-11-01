@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Modal from '../components/Modal.jsx';
 import ClassEmblem from '../components/ClassEmblem.jsx';
 import { CLASSES, QUALITIES } from '../collection/model.js';
@@ -69,11 +69,33 @@ function ImportDeck({ cards, cardReferences, controller, onReferences }) {
 
 export default function DeckDialogs({ controller, cards, cardReferences = [], onReferences = () => {}, onNotice, artMode = 'cover' }) {
   const [exportingPng, setExportingPng] = useState(false);
+  const [exportReferences, setExportReferences] = useState([]);
+  const exportLookupKey = useRef('');
   const { dialog, setDialog, busy } = controller;
+  useEffect(() => {
+    if (dialog?.type !== 'export') return undefined;
+    const known = new Set([...cards, ...cardReferences, ...exportReferences].map(card => card.dbfId));
+    const ids = [...new Set([...(dialog.deck.entries || []).map(entry => entry.id), dialog.deck.hero])]
+      .filter(id => Number.isSafeInteger(id) && !known.has(id));
+    if (!ids.length) return undefined;
+    const key = ids.join(',');
+    if (exportLookupKey.current === key) return undefined;
+    exportLookupKey.current = key;
+    let active = true;
+    request(`cards/lookup?ids=${ids.slice(0, 100).join(',')}`).then(result => {
+      if (active && result.cards.length) setExportReferences(current => [...new Map([...current, ...result.cards].map(card => [card.dbfId, card])).values()]);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [dialog?.type, dialog?.deck?.hero, dialog?.deck?.entries, cards, cardReferences, exportReferences]);
+  const exportCards = useMemo(() => {
+    const byId = new Map(cards.map(card => [card.dbfId, card]));
+    for (const card of [...cardReferences, ...exportReferences]) if (!byId.has(card.dbfId)) byId.set(card.dbfId, card);
+    return [...byId.values()];
+  }, [cards, cardReferences, exportReferences]);
   if (!dialog) return null;
   const close = () => { if (!busy) setDialog(null); };
   const titles = { new: '新建套牌 · 选择职业', import: '导入套牌', delete: '删除套牌', switch: '切换构筑', export: '导出套牌' };
-  const exportDeck = dialog.type === 'export' ? allocateDeckVariants(dialog.deck, cards) : null;
+  const exportDeck = dialog.type === 'export' ? allocateDeckVariants(dialog.deck, exportCards) : null;
   return <Modal title={titles[dialog.type]} onClose={close}><div className="deck-dialog">
     {dialog.type === 'new' && <><p>选择职业后进入我的收藏，直接点卡加入套牌。</p><div className="new-deck-classes">{CLASSES.filter(([key]) => HEROES[key]).map(([key, label]) => <button className="simple-button new-deck-class" key={key} onClick={() => controller.start({ name: `${label}新套牌`, hero: HEROES[key], format: 1, entries: [] })}><ClassEmblem cardClass={key} /><span>{label}</span></button>)}</div></>}
     {dialog.type === 'import' && <ImportDeck cards={cards} cardReferences={cardReferences} onReferences={onReferences} controller={controller} />}
@@ -81,7 +103,7 @@ export default function DeckDialogs({ controller, cards, cardReferences = [], on
     {dialog.type === 'delete' && <><p>确定删除「{dialog.deck.name}」？此操作无法撤销。</p><button className="gold-button" disabled={busy} onClick={() => controller.deleteDeck(dialog.deck)}>{busy ? '删除中…' : '确认删除'}</button><button className="simple-button" disabled={busy} onClick={close}>取消</button></>}
     {dialog.type === 'export' && <><p>导出为两列卡组图片或套牌 JSON 文件。</p><div className="deck-import-actions"><button className="gold-button" disabled={exportingPng} onClick={async () => {
       setExportingPng(true);
-      try { await exportDeckPng(dialog.deck, cards, artMode); onNotice('卡组 PNG 图片已导出。'); }
+      try { await exportDeckPng(dialog.deck, exportCards, artMode); onNotice('卡组 PNG 图片已导出。'); }
       catch (error) { onNotice(error.message || 'PNG 图片导出失败。'); }
       finally { setExportingPng(false); }
     }}>{exportingPng ? '正在生成 PNG…' : '导出 PNG 图片'}</button><button className="simple-button" onClick={() => {
