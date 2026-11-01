@@ -366,7 +366,12 @@
 .pack-main-paper>.pack-ledger-scroll{flex:0 1 auto;min-height:0;max-height:min(48vh,680px)}
 .pack-main-paper>.pack-ledger-scroll.pack-ledger-scroll-fill{flex:1 1 auto;min-height:0}
 .pack-ledger-scroll-fill>.pack-history-table{height:100%}
-.pack-history-table .pack-spacer-row>td{height:1px;padding:0;border:0;background:transparent}
+/* Auto batches keep rows between 48px and 53px, sharing available height evenly. */
+.pack-history-table tbody tr>td{height:48px;padding-block:2px}
+.pack-history-table .pack-record-select>.pack-expansion-art{width:27px;height:36px}
+.pack-history-table .pack-record-identity{gap:1px}
+.pack-history-table .pack-record-identity strong{font-size:12px;line-height:1.2}
+.pack-history-table .pack-record-identity>span{font-size:10px;line-height:1.2}
 .selected-record-sheet .selected-record-body{grid-template-columns:minmax(260px,1.1fr) minmax(270px,1.2fr) minmax(190px,.9fr) auto;gap:16px;padding:13px 16px;min-height:118px}
 .selected-record-sheet .selected-record-body>.pack-selected-identity{gap:13px}
 .selected-record-sheet .selected-record-body .pack-selected-identity>.pack-expansion-art{width:52px;height:69px;flex:none}
