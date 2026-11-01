@@ -510,17 +510,18 @@
 .pending-pack-tabs button.is-active{border-color:#ae8d5190;background:linear-gradient(#f7ebce88,#c7a76238);color:#5b3d1e;font-weight:700;box-shadow:inset 0 1px #fff7}
 .pending-pack-view-heading>time{margin-left:4px;white-space:nowrap}
 .modal.pack-dialog.pack-queue-dialog.has-pending-packs{width:min(820px,calc(100vw - 36px))}
-.pending-pack-view>.pack-card-line{width:100%;max-width:760px;margin:0 auto;gap:10px;padding:5px 0 12px;overflow:visible}
-.pending-pack-view>.pack-card-line.is-switching{opacity:0;translate:var(--pack-switch-offset,12px) 0}
+.pending-pack-view>.pack-card-line{width:100%;max-width:760px;margin:0 auto;gap:10px;padding:5px 0 12px;overflow:hidden}
 .pending-pack-view>.pack-card-line .pack-card-preview>span{display:flex;align-items:center;justify-content:center;gap:7px;font-size:10px;line-height:1.35}
 .pending-pack-view .pack-card-preview>.pack-clickable-art{height:auto}
 .pending-pack-view>.pack-card-line .pack-symbol{width:18px;height:18px;flex:0 0 18px}
 .pending-pack-view>.pack-card-line .card-art{height:auto;aspect-ratio:256/333}
 .pending-pack-arrows{margin:12px 0 15px}
-.pending-count-value{display:inline-block;opacity:1;transition:opacity 300ms cubic-bezier(.2,0,0,1)}
-.pending-summary.is-switching .pending-count-value{opacity:0}
-@media(prefers-reduced-motion:no-preference){.pending-pack-view>.pack-card-line.is-switching{translate:var(--pack-switch-offset,20px) 0}.pending-pack-view>.pack-card-line{transition-duration:360ms}.pending-count-value{translate:0 0;transition:opacity 320ms cubic-bezier(.2,0,0,1),translate 320ms cubic-bezier(.2,0,0,1)}.pending-summary.is-switching .pending-count-value{translate:0 10px}}
-@media(prefers-reduced-motion:reduce){.pending-pack-view>.pack-card-line.is-switching{translate:none}.pending-summary.is-switching .pending-count-value{opacity:0}}
+@keyframes pending-card-swipe-in{0%{opacity:.15;transform:translate3d(var(--pending-card-offset,96px),12px,0) rotate(2deg) scale(.9);filter:blur(2px)}62%{opacity:1;transform:translate3d(-5px,-2px,0) rotate(-.6deg) scale(1.035);filter:blur(0)}82%{transform:translate3d(2px,1px,0) rotate(.25deg) scale(.995)}100%{opacity:1;transform:translate3d(0,0,0) rotate(0) scale(1);filter:blur(0)}}
+@keyframes pending-count-pop{0%{opacity:.35;transform:translateY(18px) scale(.72)}68%{opacity:1;transform:translateY(-3px) scale(1.12)}86%{transform:translateY(1px) scale(.98)}100%{opacity:1;transform:translateY(0) scale(1)}}
+.pending-pack-view>.pack-card-line-switch>.pack-card-preview{animation:pending-card-swipe-in 680ms cubic-bezier(.18,.72,.22,1) both;animation-delay:var(--pending-card-delay,0ms);transform-origin:50% 75%;will-change:transform,opacity,filter}
+.pending-count-value{display:inline-block;transform-origin:center;animation:pending-count-pop 620ms cubic-bezier(.18,.72,.22,1) both;animation-delay:var(--pending-count-delay,0ms);will-change:transform,opacity}
+/* The app-wide reduced-motion rule uses `animation:none!important`; keep the explicitly requested pack-switch motion alive here. */
+@media(prefers-reduced-motion:reduce){.pending-pack-view>.pack-card-line-switch>.pack-card-preview{animation-name:pending-card-swipe-in!important;animation-duration:680ms!important;animation-delay:var(--pending-card-delay,0ms)!important;animation-timing-function:cubic-bezier(.18,.72,.22,1)!important;animation-fill-mode:both!important}.pending-summary .pending-count-value{animation-name:pending-count-pop!important;animation-duration:620ms!important;animation-delay:var(--pending-count-delay,0ms)!important;animation-timing-function:cubic-bezier(.18,.72,.22,1)!important;animation-fill-mode:both!important}}
 @media(max-width:640px){.pending-quality-counts .pack-quality-detail{padding:14px 8px}.pending-quality-counts .pack-quality-detail>span{font-size:10px;gap:3px}.pending-quality-counts .pack-quality-detail .pack-symbol{width:20px;height:20px}.pending-quality-counts .pack-quality-detail>b{font-size:22px;padding-left:24px}.pending-quality-counts .quality-signature .pack-symbol{width:24px;height:24px}.pending-quality-counts .quality-signature>b{padding:0;font-size:27px}}
 @media(max-width:560px){.pending-pack-view-heading{gap:6px}.pending-pack-tabs{gap:1px}.pending-pack-tabs button{min-width:23px;height:24px;padding-inline:5px}.pending-pack-view-heading>time{font-size:9px;margin-left:2px}.pending-pack-view>.pack-card-line{gap:3px}.pending-pack-view>.pack-card-line .pack-card-preview>span{font-size:8px;display:block;overflow-wrap:anywhere}.pending-pack-view>.pack-card-line .pack-symbol{width:14px;height:14px}}
 
