@@ -86,7 +86,7 @@ def _run_application(lock) -> int:
         return 1
 
     try:
-        webview.create_window(APP_NAME, _frontend_url(), width=1530, height=900, min_size=(980, 680))
+        webview.create_window(APP_NAME, _frontend_url(), width=1520, height=910, min_size=(980, 680))
         user_data = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / APP_NAME / "WebView"
         webview.start(debug=False, private_mode=False, storage_path=str(user_data))
     except Exception as error:
