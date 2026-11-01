@@ -20,6 +20,17 @@ async function getArt(card, type = 'strip') {
   return null;
 }
 
+async function getPortraitArt(card) {
+  const ids = [...new Set([card?.id, card?.dbfId].filter(Boolean))];
+  for (const id of ids) {
+    try {
+      const result = await loadArt(id, 'tile');
+      return await imageFromUrl(result.url);
+    } catch { /* Fall back to the class emblem if no portrait art is available. */ }
+  }
+  return null;
+}
+
 function imageFromUrl(url) {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -147,7 +158,7 @@ export async function exportDeckPng(deck, cards, artMode = 'cover') {
   const cls = inferExportClass(deck, cards);
   const hero = cards.find(card => card.dbfId === deck.hero) || cards.find(card => card.id === HERO_ART[cls]);
   const [heroArt, classEmblem, dustIcon, ...rarityIcons] = await Promise.all([
-    getArt(hero, 'tile'),
+    getPortraitArt(hero),
     loadStaticImage(`/assets/native-ui/class-emblems/${CLASSES.find(([key]) => key === cls)?.[2] || 'Neutral'}.png`),
     loadStaticImage('/assets/pack-icons/dust.png'),
     ...['common', 'rare', 'epic', 'legendary'].map(key => loadStaticImage(`/assets/pack-icons/${key}.png`)),
