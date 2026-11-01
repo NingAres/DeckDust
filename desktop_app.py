@@ -10,6 +10,7 @@ from pathlib import Path
 import webview
 from local_server import LocalServer, create_server
 from data_directory import DataDirectoryRedirected, relaunch_from_desktop
+from deck_export_directory import deck_export_directory
 
 
 APP_NAME = "Deck Dust"
@@ -55,6 +56,28 @@ def serve() -> LocalServer:
     return server
 
 
+class DesktopApi:
+    def __init__(self, export_dir: Path):
+        self.export_dir = export_dir
+        self.window = None
+
+    def choose_deck_json(self):
+        if self.window is None:
+            return None
+        selected = self.window.create_file_dialog(
+            webview.FileDialog.OPEN,
+            directory=str(self.export_dir),
+            allow_multiple=False,
+            file_types=('套牌 JSON 文件 (*.json)',),
+        )
+        if not selected:
+            return None
+        path = Path(selected[0])
+        if path.suffix.lower() != '.json' or path.stat().st_size > 5 * 1024 * 1024:
+            raise ValueError('请选择不超过 5 MB 的套牌 JSON 文件。')
+        return {'name': path.name, 'text': path.read_text(encoding='utf-8-sig')}
+
+
 def _frontend_url() -> str:
     index = ROOT / "web-dist" / "index.html"
     match = re.search(r"[?&]v=([^\"&]+)", index.read_text(encoding="utf-8"))
@@ -86,7 +109,10 @@ def _run_application(lock) -> int:
         return 1
 
     try:
-        webview.create_window(APP_NAME, _frontend_url(), width=1520, height=910, min_size=(980, 680))
+        export_dir = deck_export_directory()
+        api = DesktopApi(export_dir)
+        window = webview.create_window(APP_NAME, _frontend_url(), width=1520, height=910, min_size=(980, 680), js_api=api)
+        api.window = window
         user_data = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / APP_NAME / "WebView"
         webview.start(debug=False, private_mode=False, storage_path=str(user_data))
     except Exception as error:

@@ -7,6 +7,15 @@ export async function request(path, body, signal) {
   return data;
 }
 
+export async function saveDeckExport(name, blob) {
+  const response = await fetch(`/api/deck-exports?name=${encodeURIComponent(name)}`, {
+    method: 'POST', headers: { 'Content-Type': blob.type }, body: blob,
+  });
+  const data = await response.json().catch(() => ({ error: '本地导出服务返回了无效响应。' }));
+  if (!response.ok) throw new Error(data.error || '无法保存套牌导出文件。');
+  return data;
+}
+
 // Shared request queue bounds network work even when the user changes pages quickly.
 const artCache = new Map();
 const queue = [];

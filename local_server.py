@@ -20,6 +20,7 @@ from deck_service import DeckStore
 from pack_service import PackStore
 from pack_monitor import PackMonitor, detect_log_path
 from cloud_backup import CloudBackup
+from deck_export_directory import deck_export_directory
 
 DISCONNECTED = (BrokenPipeError, ConnectionResetError, ConnectionAbortedError)
 
@@ -107,13 +108,14 @@ class CardArtCache:
 
 
 class AppHandler(SimpleHTTPRequestHandler):
-    def __init__(self, *args, store: CollectionStore, art: CardArtCache, auth: HSReplayAuth, packs: PackStore, monitor: PackMonitor, cloud_backup: CloudBackup, **kwargs):
+    def __init__(self, *args, store: CollectionStore, art: CardArtCache, auth: HSReplayAuth, packs: PackStore, monitor: PackMonitor, cloud_backup: CloudBackup, export_dir: Path, **kwargs):
         self.store = store
         self.art = art
         self.auth = auth
         self.packs = packs
         self.monitor = monitor
         self.cloud_backup = cloud_backup
+        self.export_dir = export_dir
         self.decks = DeckStore(store.data_dir)
         self.app_root = store.root / 'web-dist'
         super().__init__(*args, directory=str(self.app_root), **kwargs)
@@ -157,6 +159,17 @@ class AppHandler(SimpleHTTPRequestHandler):
                 self.send_json({**self.packs.read(), 'monitor': self.monitor.status()})
             elif path == '/api/decks':
                 self.send_json(self.decks.read())
+            elif path == '/api/deck-exports':
+                name = parse_qs(urlparse(self.path).query).get('name', [''])[0]
+                if name:
+                    target = self._deck_export_path(name, ('.json',))
+                    if not target.is_file():
+                        self.send_json({'error': '导出文件夹中找不到这个 JSON 文件。'}, 404)
+                        return
+                    self.send_json({'name': name, 'text': target.read_text(encoding='utf-8-sig')})
+                else:
+                    files = sorted(path.name for path in self.export_dir.glob('*.json') if path.is_file())
+                    self.send_json({'files': files})
             elif path == '/api/catalog':
                 self.send_json({'cards': self.store.catalog})
             elif path == '/api/cards/lookup':
@@ -206,6 +219,9 @@ class AppHandler(SimpleHTTPRequestHandler):
     def do_POST(self):
         if self.headers.get('Sec-Fetch-Site') == 'cross-site':
             self.send_json({'error': '不接受跨站请求'}, 403)
+            return
+        if urlparse(self.path).path == '/api/deck-exports':
+            self._save_deck_export()
             return
         if self.headers.get_content_type() != 'application/json':
             self.send_json({'error': '请发送 JSON 数据'}, 415)
@@ -274,6 +290,44 @@ class AppHandler(SimpleHTTPRequestHandler):
         except (OSError, sqlite3.Error):
             self.send_json({'error': '本地收藏保存失败，已有数据已保留。'}, 500)
 
+    def _deck_export_path(self, name: str, extensions=('.json', '.png')) -> Path:
+        if (not isinstance(name, str) or len(name) > 120 or Path(name).name != name
+                or not re.fullmatch(r'[^<>:"/\\|?*\x00-\x1f]+', name)
+                or Path(name).suffix.lower() not in extensions):
+            raise ValueError('导出文件名无效。')
+        directory = self.export_dir.resolve()
+        target = (directory / name).resolve()
+        if target.parent != directory:
+            raise ValueError('导出文件路径无效。')
+        return target
+
+    def _save_deck_export(self) -> None:
+        try:
+            name = parse_qs(urlparse(self.path).query).get('name', [''])[0]
+            target = self._deck_export_path(name)
+            length = int(self.headers.get('Content-Length', '0'))
+            if not 0 < length <= 20 * 1024 * 1024:
+                self.send_json({'error': '导出文件为空或超过 20 MB。'}, 413)
+                return
+            content_type = self.headers.get_content_type()
+            expected_type = 'image/png' if target.suffix.lower() == '.png' else 'application/json'
+            if content_type != expected_type:
+                self.send_json({'error': '导出文件格式与扩展名不一致。'}, 415)
+                return
+            content = self.rfile.read(length)
+            if len(content) != length:
+                self.send_json({'error': '导出文件未完整接收。'}, 400)
+                return
+            if target.suffix.lower() == '.png' and not content.startswith(b'\x89PNG\r\n\x1a\n'):
+                self.send_json({'error': 'PNG 文件数据无效。'}, 400)
+                return
+            temporary = target.with_name(f'.{target.name}.tmp')
+            temporary.write_bytes(content)
+            temporary.replace(target)
+            self.send_json({'name': target.name})
+        except (ValueError, OSError) as error:
+            self.send_json({'error': str(error) or '无法写入套牌导出文件夹。'}, 400)
+
 
 class LocalServer(ThreadingHTTPServer):
     daemon_threads = True
@@ -287,13 +341,13 @@ class LocalServer(ThreadingHTTPServer):
         super().server_close()
 
 
-def create_server(port: int, root: Path = RESOURCE_ROOT, data_dir: Path | None = None):
+def create_server(port: int, root: Path = RESOURCE_ROOT, data_dir: Path | None = None, export_dir: Path | None = None):
     store = CollectionStore(root, data_dir)
     packs = PackStore(store.data_dir, store.catalog)
     cloud_backup = CloudBackup(store.data_dir)
     monitor = PackMonitor(packs, on_change=lambda: cloud_backup.schedule('new pack events detected'))
     try:
-        server = LocalServer(('127.0.0.1', port), partial(AppHandler, store=store, art=CardArtCache(store.data_dir), auth=HSReplayAuth(store), packs=packs, monitor=monitor, cloud_backup=cloud_backup))
+        server = LocalServer(('127.0.0.1', port), partial(AppHandler, store=store, art=CardArtCache(store.data_dir), auth=HSReplayAuth(store), packs=packs, monitor=monitor, cloud_backup=cloud_backup, export_dir=export_dir or deck_export_directory()))
     except Exception:
         monitor.close()
         raise

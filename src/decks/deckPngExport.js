@@ -1,11 +1,12 @@
-import { deckClass, deckLimit, effectiveDeckTotal, HERO_ART, isDeckCompanion } from './model.js';
+import { deckClass, deckLimit, effectiveDeckTotal, encodeDeck, HERO_ART, isDeckCompanion } from './model.js';
 import { loadArt } from '../collection/api.js';
 import { prepareDeckArtwork } from './artwork.js';
 import { CLASSES } from '../collection/model.js';
+import { saveDeckExport } from '../collection/api.js';
 
 const NORMAL_DUST = { COMMON: 40, RARE: 100, EPIC: 400, LEGENDARY: 1600 };
 const GOLD_DUST = { COMMON: 400, RARE: 800, EPIC: 1600, LEGENDARY: 3200 };
-const QUALITY_COLORS = { normal: '#c8b991', golden: '#f0c94c', diamond: '#8eeaff', signature: '#4bd2b1' };
+const QUALITY_COLORS = { normal: '#fff0cf', golden: '#ffcf24', diamond: '#72e8ff', signature: '#42e0b6' };
 const safeName = name => String(name || '套牌').replace(/[<>:"/\\|?*]/g, '_').slice(0, 80);
 
 async function getArt(card, type = 'strip') {
@@ -133,24 +134,20 @@ function drawRow(ctx, row, image, rarityImage, x, y, width, height, mode) {
   ctx.fillStyle = '#9bdcff'; ctx.beginPath(); ctx.arc(x + 19, y + height / 2, 12, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#10202c'; ctx.font = '700 14px system-ui, sans-serif'; ctx.fillText(String(row.card?.cost ?? '?'), x + 19, y + height / 2 + 1);
   const rarity = row.card?.rarity || 'FREE';
-  const rarityMeta = {
-    FREE: ['common', '免费'], COMMON: ['common', '普通'], RARE: ['rare', '稀有'],
-    EPIC: ['epic', '史诗'], LEGENDARY: ['legendary', '传说'],
-  }[rarity] || ['common', '未知'];
-  if (rarityImage) {
-    ctx.save(); ctx.globalAlpha = rarity === 'FREE' ? .72 : 1;
-    ctx.drawImage(rarityImage, x + 39, y + (height - 17) / 2, 17, 17); ctx.restore();
-  }
-  ctx.textAlign = 'left'; ctx.fillStyle = rarity === 'FREE' ? '#d4d0c8' : '#d8c89f'; ctx.font = '11px system-ui, sans-serif';
-  ctx.fillText(rarityMeta[1], x + 58, y + height / 2 + 1);
+  const hasRarityIcon = rarity !== 'FREE' && !!rarityImage;
+  if (hasRarityIcon) ctx.drawImage(rarityImage, x + 39, y + (height - 18) / 2, 18, 18);
   ctx.fillStyle = '#fff2d5'; ctx.font = '600 13px system-ui, sans-serif';
   const name = row.card?.name || `未知卡牌 #${row.id}`;
-  const nameX = x + 94;
-  const maxNameWidth = width - 116;
+  const nameX = x + (hasRarityIcon ? 64 : 39);
+  const maxNameWidth = width - (nameX - x) - 52;
   let displayName = name; while (displayName.length > 1 && ctx.measureText(displayName).width > maxNameWidth) displayName = `${displayName.slice(0, -2)}…`;
   ctx.fillText(displayName, nameX, y + height / 2 + 1);
-  ctx.textAlign = 'right'; ctx.fillStyle = QUALITY_COLORS[row.quality] || '#fff0c8'; ctx.font = '700 15px system-ui, sans-serif';
-  ctx.fillText('×1', x + width - 11, y + height / 2 + 1);
+  const nameWidth = ctx.measureText(displayName).width;
+  const markerX = nameX + nameWidth + 9, markerWidth = 31, markerHeight = 25;
+  ctx.fillStyle = '#101820dd'; roundedRect(ctx, markerX - 5, y + (height - markerHeight) / 2, markerWidth, markerHeight, 6); ctx.fill();
+  ctx.strokeStyle = '#d8c89f88'; ctx.lineWidth = 1; roundedRect(ctx, markerX - 5, y + (height - markerHeight) / 2, markerWidth, markerHeight, 6); ctx.stroke();
+  ctx.textAlign = 'left'; ctx.fillStyle = QUALITY_COLORS[row.quality] || QUALITY_COLORS.normal; ctx.font = '800 14px system-ui, sans-serif';
+  ctx.fillText('×1', markerX, y + height / 2 + 1);
 }
 
 export async function exportDeckPng(deck, cards, artMode = 'cover') {
@@ -170,15 +167,27 @@ export async function exportDeckPng(deck, cards, artMode = 'cover') {
     rowImages.set(id, await getArt(row.card));
   }));
 
-  const width = 960, margin = 24, gap = 16, columnWidth = (width - margin * 2 - gap) / 2;
+  const margin = 24, gap = 16, columnWidth = 300, width = margin * 2 + gap + columnWidth * 2;
   const headerHeight = 160, rowHeight = 40, rowGap = 5, rowsPerColumn = Math.ceil(rows.length / 2);
-  const height = Math.max(330, margin * 2 + headerHeight + rowsPerColumn * rowHeight + Math.max(0, rowsPerColumn - 1) * rowGap);
+  const deckCode = deck.code || encodeDeck(deck);
+  const codeFont = '12px ui-monospace, Consolas, monospace';
+  const codeMeasure = document.createElement('canvas').getContext('2d'); codeMeasure.font = codeFont;
+  const codeLines = [];
+  let remainingCode = deckCode;
+  while (remainingCode) {
+    let length = remainingCode.length;
+    while (length > 1 && codeMeasure.measureText(remainingCode.slice(0, length)).width > width - margin * 2 - 28) length--;
+    codeLines.push(remainingCode.slice(0, length)); remainingCode = remainingCode.slice(length);
+  }
+  const listBottom = margin + headerHeight + rowsPerColumn * rowHeight + Math.max(0, rowsPerColumn - 1) * rowGap;
+  const codePanelHeight = 38 + codeLines.length * 17;
+  const height = Math.max(330, listBottom + 14 + codePanelHeight + margin);
   const scale = 1, canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
   const ctx = canvas.getContext('2d'); ctx.scale(scale, scale);
   const bg = ctx.createLinearGradient(0, 0, width, height); bg.addColorStop(0, '#283b4e'); bg.addColorStop(1, '#172838'); ctx.fillStyle = bg; ctx.fillRect(0, 0, width, height);
   ctx.strokeStyle = '#d6b45f'; ctx.lineWidth = 2; ctx.strokeRect(10, 10, width - 20, height - 20);
 
-  const avatarX = margin, avatarY = margin, avatarSize = 92;
+  const avatarX = margin, avatarY = margin, avatarSize = 120;
   ctx.save(); roundedRect(ctx, avatarX, avatarY, avatarSize, avatarSize, 8); ctx.clip();
   ctx.fillStyle = '#18222d'; ctx.fillRect(avatarX, avatarY, avatarSize, avatarSize);
   if (heroArt) ctx.drawImage(heroArt, ...coverCrop(heroArt, avatarX, avatarY, avatarSize, avatarSize, .25));
@@ -194,24 +203,25 @@ export async function exportDeckPng(deck, cards, artMode = 'cover') {
   if (dustIcon) ctx.drawImage(dustIcon, margin + avatarSize + 18, dustY - 18, dustSize, dustSize);
   ctx.fillStyle = '#eee0c0'; ctx.font = '700 22px system-ui, sans-serif'; ctx.fillText(totals.normal.toLocaleString(), margin + avatarSize + 48, dustY);
   if (dustIcon) {
-    ctx.save(); ctx.filter = 'sepia(1) saturate(5) hue-rotate(350deg)';
-    ctx.drawImage(dustIcon, margin + avatarSize + 172, dustY - 18, dustSize, dustSize); ctx.restore();
+    ctx.drawImage(dustIcon, margin + avatarSize + 172, dustY - 18, dustSize, dustSize);
   }
   ctx.fillStyle = '#ffd12d'; ctx.fillText(totals.golden.toLocaleString(), margin + avatarSize + 202, dustY);
   const curve = Array(8).fill(0);
   rows.forEach(row => { curve[Math.min(7, row.card?.cost || 0)] += 1; });
-  drawCurve(ctx, curve, width - margin - 240, margin + 14, 240, 100);
-  ctx.fillStyle = '#e9d59f'; ctx.font = '700 12px system-ui, sans-serif'; ctx.textAlign = 'right';
-  ctx.fillText(`${rows.length} 张 · Deck Dust`, width - margin, margin + 149);
-
+  drawCurve(ctx, curve, width - margin - 180, margin + 14, 180, 100);
   const startY = margin + headerHeight;
   rows.forEach((row, index) => {
     const column = Math.floor(index / rowsPerColumn), line = index % rowsPerColumn;
     const x = margin + column * (columnWidth + gap), y = startY + line * (rowHeight + rowGap);
     drawRow(ctx, row, rowImages.get(row.id), rarityImages.get(row.card?.rarity) || rarityImages.get('FREE'), x, y, columnWidth, rowHeight, artMode);
   });
+  const codeY = listBottom + 14;
+  roundedRect(ctx, margin, codeY, width - margin * 2, codePanelHeight, 7);
+  ctx.fillStyle = '#142332'; ctx.fill(); ctx.strokeStyle = '#c8a858'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = '#e7c971'; ctx.font = '700 12px system-ui, sans-serif';
+  ctx.fillText('卡组代码', margin + 13, codeY + 17);
+  ctx.fillStyle = '#e3dbc8'; ctx.font = codeFont;
+  codeLines.forEach((line, index) => ctx.fillText(line, margin + 13, codeY + 34 + index * 17));
   const blob = await new Promise((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('无法生成 PNG 图片。')), 'image/png'));
-  const url = URL.createObjectURL(blob); const anchor = document.createElement('a');
-  anchor.href = url; anchor.download = `${safeName(deck.name)}.png`; anchor.click();
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  await saveDeckExport(`${safeName(deck.name)}.png`, blob);
 }
