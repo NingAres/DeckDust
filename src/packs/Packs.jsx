@@ -1,4 +1,5 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import Icon from '../components/Icon.jsx';
 import Modal from '../components/Modal.jsx';
 import PackSymbol, { QualitySymbol } from './PackSymbol.jsx';
@@ -67,6 +68,37 @@ export default function Packs({ view, cards, onNavigate, onNotice }) {
   const [checked, setChecked] = useState([]);
   const [busy, setBusy] = useState(false);
   const [sort, setSort] = useState('count');
+  const filterContentRef = useRef(null), filterTransitionId = useRef(0);
+  function transitionFilteredContent(update, search = false) {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const exitDuration = reduced ? 120 : search ? 100 : 150;
+    const enterDuration = reduced ? 120 : search ? 140 : 300;
+    const root = document.documentElement;
+    const transitionId = ++filterTransitionId.current;
+    if (typeof document.startViewTransition === 'function') {
+      root.style.setProperty('--pack-filter-exit-duration', `${exitDuration}ms`);
+      root.style.setProperty('--pack-filter-enter-duration', `${enterDuration}ms`);
+      root.style.setProperty('--pack-filter-exit-y', reduced || search ? '0px' : '-12px');
+      root.style.setProperty('--pack-filter-enter-y', reduced || search ? '0px' : '12px');
+      root.style.setProperty('--pack-filter-blur', reduced || search ? '0px' : '4px');
+      const transition = document.startViewTransition(() => flushSync(update));
+      const clearMotion = () => {
+        if (filterTransitionId.current !== transitionId) return;
+        root.style.removeProperty('--pack-filter-exit-duration');
+        root.style.removeProperty('--pack-filter-enter-duration');
+        root.style.removeProperty('--pack-filter-exit-y');
+        root.style.removeProperty('--pack-filter-enter-y');
+        root.style.removeProperty('--pack-filter-blur');
+      };
+      transition.finished.then(clearMotion, clearMotion);
+      return;
+    }
+    update();
+    requestAnimationFrame(() => filterContentRef.current?.animate(
+      reduced ? [{ opacity: .55 }, { opacity: 1 }] : [{ opacity: .35, transform: 'translateY(8px)', filter: 'blur(3px)' }, { opacity: 1, transform: 'translateY(0)', filter: 'blur(0)' }],
+      { duration: enterDuration, easing: 'cubic-bezier(.2,0,0,1)' },
+    ));
+  }
   const today = new Date().toLocaleDateString('sv-SE');
   const start = new Date();
   start.setDate(start.getDate() - ({ today: 0, week: 6, month: 29 }[range] || 0));
@@ -125,18 +157,19 @@ export default function Packs({ view, cards, onNavigate, onNotice }) {
     </div> : null}
     {api.error ? <div className="pack-api-error" role="alert">{api.error}<button onClick={() => api.refresh().catch(() => {})}>重新加载</button></div> : null}
     <div className={`pack-layout ${isRecords ? '' : 'pack-layout-wide'}`}><div className="paper pack-main-paper">
-      <div className="pack-filters"><label><span>扩展包</span><select value={set} onChange={event => { setSet(event.target.value); setType(''); }}><option value="">全部扩展包</option>{setNames.map(name => <option key={name}>{name}</option>)}</select></label>
-        <label><span>卡包类型</span><select value={type} onChange={event => setType(event.target.value)}><option value="">全部类型</option>{availableTypes.map(([key, name]) => <option key={key} value={key}>{name}</option>)}</select></label>
-        <label><span>时间范围</span><select value={range} onChange={event => setRange(event.target.value)}><option value="all">全部时间</option><option value="today">今天</option><option value="week">最近 7 天</option><option value="month">最近 30 天</option></select></label>
-        {isRecords ? <label className="pack-search"><span>搜索记录</span><div><Icon name="search" /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="搜索品质、系列、来源、备注" /></div></label> : <div className="pack-filter-note">统计口径 <strong>当前筛选范围</strong></div>}
+      <div className="pack-filters"><label><span>扩展包</span><select value={set} onChange={event => transitionFilteredContent(() => { setSet(event.target.value); setType(''); })}><option value="">全部扩展包</option>{setNames.map(name => <option key={name}>{name}</option>)}</select></label>
+        <label><span>卡包类型</span><select value={type} onChange={event => transitionFilteredContent(() => setType(event.target.value))}><option value="">全部类型</option>{availableTypes.map(([key, name]) => <option key={key} value={key}>{name}</option>)}</select></label>
+        <label><span>时间范围</span><select value={range} onChange={event => transitionFilteredContent(() => setRange(event.target.value))}><option value="all">全部时间</option><option value="today">今天</option><option value="week">最近 7 天</option><option value="month">最近 30 天</option></select></label>
+        {isRecords ? <label className="pack-search"><span>搜索记录</span><div><Icon name="search" /><input value={query} onChange={event => transitionFilteredContent(() => setQuery(event.target.value), true)} placeholder="搜索品质、系列、来源、备注" /></div></label> : <div className="pack-filter-note">统计口径 <strong>当前筛选范围</strong></div>}
       </div>
-      {isRecords ? <Metrics records={statsFiltered} set={set} type={type} /> : null}
-      {isRecords ? <>
-        <div className="pack-section-heading"><h2>开包明细 <span>{filtered.length} 条记录</span></h2><div className="pack-history-tools"><button className="simple-button" onClick={() => setDialog({ kind: "recent" })}><Icon name="collection" />最近开包记录</button><label className="pack-source-filter"><span className="sr-only">记录来源</span><select value={source} onChange={event => setSource(event.target.value)}><option value="">全部来源</option>{[...new Set(records.map(record => record.source))].map(source => <option key={source}>{source}</option>)}</select></label></div></div>
-        <HistoryTable records={filtered} pityRecords={records} catalog={cards} active={active?.id} onSelect={setSelected} onDetails={record => setDialog({ kind: 'details', record })} />
-        {!filtered.length ? <div className="pack-empty"><Icon name="pack" /><h3>还没有符合条件的记录</h3><p>试试其他筛选，或新增一条开包记录。</p><button className="simple-button" onClick={() => { setSet(''); setType(''); setSource(''); setRange('all'); setQuery(''); }}>重置筛选</button></div> : null}
+      <div ref={filterContentRef} className="pack-filter-content" style={{ viewTransitionName: 'pack-filter-content' }}>
+      {isRecords ? <><Metrics records={statsFiltered} set={set} type={type} />
+        <div className="pack-section-heading"><h2>开包明细 <span>{filtered.length} 条记录</span></h2><div className="pack-history-tools"><button className="simple-button" onClick={() => setDialog({ kind: "recent" })}><Icon name="collection" />最近开包记录</button><label className="pack-source-filter"><span className="sr-only">记录来源</span><select value={source} onChange={event => transitionFilteredContent(() => setSource(event.target.value))}><option value="">全部来源</option>{[...new Set(records.map(record => record.source))].map(source => <option key={source}>{source}</option>)}</select></label></div></div>
+        <HistoryTable records={filtered} pityRecords={records} catalog={cards} active={active?.id} onSelect={setSelected} onDetails={record => setDialog({ kind: 'details', record })} animatePages />
+        {!filtered.length ? <div className="pack-empty"><Icon name="pack" /><h3>还没有符合条件的记录</h3><p>试试其他筛选，或新增一条开包记录。</p><button className="simple-button" onClick={() => transitionFilteredContent(() => { setSet(''); setType(''); setSource(''); setRange('all'); setQuery(''); })}>重置筛选</button></div> : null}
         {active ? <SelectedRecord ref={selectedSheet} record={active} catalog={cards} onDetails={() => setDialog({ kind: 'details', record: active })} /> : null}
-      </> : isAnalysis ? <PackAnalysis cycles={api.cycles.filter(cycle => (!set || cycle.set === set) && (!type || cycle.type === type))} records={records.filter(record => (!set || record.set === set) && (!type || record.type === type))} dateFrom={cutoff} dateTo={cutoff ? today : ""} onDetails={cycle => setDialog({ kind: 'cycle', cycle })} /> : <PackOverview records={statsFiltered} sort={sort} onSort={setSort} />}
+      </> : isAnalysis ? <PackAnalysis cycles={api.cycles.filter(cycle => (!set || cycle.set === set) && (!type || cycle.type === type))} records={records.filter(record => (!set || record.set === set) && (!type || record.type === type))} dateFrom={cutoff} dateTo={cutoff ? today : ""} onDetails={cycle => setDialog({ kind: 'cycle', cycle })} /> : <PackOverview records={statsFiltered} sort={sort} onSort={setSort} onTransition={transitionFilteredContent} />}
+      </div>
       <footer className="pack-paper-footer"><span>{api.loading ? "正在读取数据库…" : "本地数据库 · 自动保存"}</span><span>{api.migration.length ? "旧累计统计与原始单次明细分别保留" : "每包 5 张 · 按卡包类型独立累计"}</span></footer>
     </div>{isRecords ? <aside className="pack-sidebar"><section className="pack-monitor-panel"><div className="pack-section-heading"><h2>日志监控</h2><button className={`pack-switch ${monitor ? 'on' : ''}`} role="switch" aria-label="切换日志监控" aria-checked={monitor} disabled={busy} onClick={toggleMonitor}><span /></button></div>
       <div className="pack-monitor-status"><span className={`monitor-dot ${monitor ? 'on' : ''}`} /><strong>{api.monitor.message.replace(/Hearthstone_(\d{4})_(\d{2})_(\d{2})_(\d{2})_(\d{2})_(\d{2})[\\/]Net\.log/, '$2/$3 $4:$5:$6')}</strong></div><p>日志增量识别，确认后加入记录。<br />待确认卡包会保留到重启之后。</p>

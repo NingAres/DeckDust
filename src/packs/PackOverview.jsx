@@ -19,13 +19,17 @@ function sortValue(row, key) {
   if (key === 'packsPerLegendary') return row.legendary ? row.count / row.legendary : null;
   return key === 'set' ? row.set : Number(row[key]);
 }
-export default function PackOverview({ records, sort, onSort }) {
+export default function PackOverview({ records, sort, onSort, onTransition = update => update() }) {
   const [analysisKey, setAnalysisKey] = useState(null);
   const [direction, setDirection] = useState('desc');
   const [lastClicked, setLastClicked] = useState(null);
   function changeSort(key, fromHeader = false) {
-    setDirection(fromHeader && lastClicked === key && direction === 'desc' ? 'asc' : 'desc');
-    setLastClicked(fromHeader ? key : null); onSort(key);
+    const nextDirection = fromHeader && lastClicked === key && direction === 'desc' ? 'asc' : 'desc';
+    onTransition(() => {
+      setDirection(nextDirection);
+      setLastClicked(fromHeader ? key : null);
+      onSort(key);
+    });
   }
   const rows = overviewRows(records).sort((a, b) => {
     const left = sortValue(a, sort), right = sortValue(b, sort);

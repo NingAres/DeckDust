@@ -54,19 +54,39 @@ export default function HistoryTable({ records, catalog = [], pityRecords = reco
   const pages = Math.max(1, Math.ceil(sorted.length / perPage)), current = Math.min(page, pages - 1);
   const visible = sorted.slice(current * perPage, current * perPage + perPage);
   const totals = summarize(records);
+  async function animatePageOut(element, direction) {
+    if (!animatePages || !element) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const from = reduced ? { opacity: 1 } : { opacity: 1, transform: 'translateX(0)' };
+    const to = reduced ? { opacity: .55 } : { opacity: .4, transform: `translateX(${direction === 'next' ? '-10px' : '10px'})` };
+    await element.animate([from, to], { duration: reduced ? 120 : 140, easing: 'ease-out' }).finished.catch(() => {});
+  }
+  function animatePageIn(element, direction) {
+    if (!animatePages || !element) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const from = reduced ? { opacity: .55 } : { opacity: .4, transform: `translateX(${direction === 'next' ? '10px' : '-10px'})` };
+    const to = reduced ? { opacity: 1 } : { opacity: 1, transform: 'translateX(0)' };
+    element.animate([from, to], { duration: reduced ? 120 : 250, easing: 'cubic-bezier(.2,.75,.25,1)' });
+  }
   async function goPage(next) {
     const element = scrollRef.current;
-    if (animatePages && element && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      await element.animate([{ opacity: 1, transform: 'translateX(0)' }, { opacity: 0.45, transform: `translateX(${next > current ? '-8px' : '8px'})` }], { duration: 110, easing: 'ease-out' }).finished.catch(() => {});
-    }
+    const direction = next > current ? 'next' : 'prev';
+    await animatePageOut(element, direction);
     setPage(next); if (element) element.scrollTop = 0;
     if (sorted[next * perPage]) onSelect(sorted[next * perPage].id);
-    if (animatePages && element && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) requestAnimationFrame(() => element.animate([{ opacity: 0.45, transform: `translateX(${next > current ? '8px' : '-8px'})` }, { opacity: 1, transform: 'translateX(0)' }], { duration: 220, easing: 'cubic-bezier(.2,.75,.25,1)' }));
+    requestAnimationFrame(() => animatePageIn(element, direction));
+  }
+  async function changePageSize(nextSize) {
+    const element = scrollRef.current;
+    await animatePageOut(element, 'next');
+    setSize(nextSize); setPage(0);
+    if (element) element.scrollTop = 0;
+    requestAnimationFrame(() => animatePageIn(element, 'next'));
   }
   return <><div ref={scrollRef} className={`pack-ledger-scroll ${animatePages ? 'pack-page-animated' : ''}`} tabIndex={0} role="region" aria-label="开包明细"><table className="pack-ledger pack-history-table"><colgroup><col style={{ width: '22%' }} /><col style={{ width: '5%' }} />{Array.from({ length: 8 }, (_, index) => <col key={index} style={{ width: '6.5%' }} />)}<col style={{ width: '8%' }} /><col style={{ width: '9%' }} /><col style={{ width: '4%' }} /></colgroup><thead><tr className="pack-quality-columns"><th className="pack-sticky-series">时间 / 系列</th><th>包数</th>{QUALITY_FIELDS.map(([key, label]) => <th key={key} title={label} className={qualityClass(key)}><span className="pack-quality-heading"><QualitySymbol quality={key} />{QUALITY_SHORT_NAMES[key]}</span></th>)}<th>来源</th><th className="pack-sticky-actions"><span className="sr-only">操作</span></th></tr></thead>
       <tbody>{visible.map(record => <RecordRow key={record.id} record={record} catalog={catalog} pityRecords={pityRecords} active={active} onSelect={onSelect} onDetails={onDetails} />)}{fillRows ? Array.from({ length: Math.max(0, perPage - visible.length) }, (_, index) => <tr key={`placeholder-${index}`} className="pack-placeholder-row" aria-hidden="true"><td colSpan={13} /></tr>) : null}</tbody>
       <tfoot><tr><th className="pack-sticky-series" scope="row">筛选合计</th><td>{totals.count}</td>{QUALITY_FIELDS.map(([key]) => <td key={key} className={qualityClass(key)}>{totals.qualities[key] || 0}</td>)}<td>—</td><td className="pack-sticky-actions" /></tr></tfoot>
-    </table></div><div className="pack-history-pagination"><span>{records.length ? `${current * perPage + 1}–${Math.min((current + 1) * perPage, records.length)}` : '0'} / {records.length} 条</span><label><span className="sr-only">每批记录条数</span><select value={size} onChange={event => { setSize(event.target.value); setPage(0); }}><option value="auto">自动分批（{autoSize} 条）</option><option value="5">每批 5 条</option><option value="10">每批 10 条</option><option value="20">每批 20 条</option></select></label><div><button className="pack-scroll-button" aria-label="上一批记录" disabled={!current} onClick={() => goPage(current - 1)}><Icon name="left" /></button><b>{current + 1} / {pages}</b><button className="pack-scroll-button" aria-label="下一批记录" disabled={current === pages - 1} onClick={() => goPage(current + 1)}><Icon name="right" /></button></div></div></>;
+    </table></div><div className="pack-history-pagination"><span>{records.length ? `${current * perPage + 1}–${Math.min((current + 1) * perPage, records.length)}` : '0'} / {records.length} 条</span><label><span className="sr-only">每批记录条数</span><select value={size} onChange={event => changePageSize(event.target.value)}><option value="auto">自动分批（{autoSize} 条）</option><option value="5">每批 5 条</option><option value="10">每批 10 条</option><option value="20">每批 20 条</option></select></label><div><button className="pack-scroll-button" aria-label="上一批记录" disabled={!current} onClick={() => goPage(current - 1)}><Icon name="left" /></button><b>{current + 1} / {pages}</b><button className="pack-scroll-button" aria-label="下一批记录" disabled={current === pages - 1} onClick={() => goPage(current + 1)}><Icon name="right" /></button></div></div></>;
 }
 function RecordRow({ record, catalog, pityRecords, active, onSelect, onDetails }) {
   const details = useMemo(() => recordedCards(record, catalog), [record, catalog]);
