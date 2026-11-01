@@ -29,11 +29,12 @@ export default function DeckStripArt({ card, mode = 'cover' }) {
     setAspectRatio(current => Math.abs(current - next) < .001 ? current : next);
   };
   return <span ref={ref} className={`strip-art-layer strip-art-layer--${mode}`} style={{ '--strip-focus-y': focusY }} aria-hidden="true">
-    {state.url && mode === 'layered' && <span className="strip-art-frame" style={{ aspectRatio }}>
-      <img className="strip-art-backdrop strip-art-backdrop-extension" src={state.url} alt="" />
-      <img className="strip-art-backdrop strip-art-backdrop-underlay" src={state.url} alt="" />
-      <img className="strip-art" src={state.url} alt="" onLoad={rememberAspectRatio} onError={() => setState({ failed: true })} />
-    </span>}
+    {state.url && mode === 'layered' && <>
+      <img className="strip-art-backdrop" src={state.url} alt="" />
+      <span className="strip-art-frame" style={{ aspectRatio }}>
+        <img className="strip-art" src={state.url} alt="" onLoad={rememberAspectRatio} onError={() => setState({ failed: true })} />
+      </span>
+    </>}
     {state.url && mode !== 'layered' && <img className="strip-art" src={state.url} alt="" onLoad={rememberAspectRatio} onError={() => setState({ failed: true })} />}
     {state.failed && <span className="strip-art-status">插画暂不可用</span>}
   </span>;

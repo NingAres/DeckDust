@@ -206,11 +206,9 @@
 .deck-editor .row { background: #392b20; border-color: #91816b; }
 .deck-editor .strip-art-layer { position: absolute; inset: 0; width: 100%; z-index: 0; pointer-events: none; overflow: hidden; }
 .deck-editor .strip-art-layer--cover .strip-art { position: absolute; z-index: 1; inset: 0; display: block; width: 100%; max-width: none; height: 100%; object-fit: cover; object-position: center var(--strip-focus-y, 50%); opacity: 1; }
+.deck-editor .strip-art-layer--layered > .strip-art-backdrop { position: absolute; z-index: 0; inset: -10px; display: block; width: calc(100% + 20px); height: calc(100% + 20px); object-fit: cover; object-position: center var(--strip-focus-y, 50%); transform: scale(1.04); filter: blur(12px) saturate(.88); opacity: .76; pointer-events: none; }
 .deck-editor .strip-art-layer--layered .strip-art-frame { position: absolute; z-index: 1; top: 0; right: 0; display: block; width: auto; max-width: 100%; height: 100%; overflow: visible; }
-.deck-editor .strip-art-layer--layered .strip-art-backdrop { position: absolute; z-index: 0; top: -4px; bottom: auto; height: calc(100% + 8px); object-fit: fill; filter: blur(8px); opacity: .74; pointer-events: none; }
-.deck-editor .strip-art-layer--layered .strip-art-backdrop-underlay { inset-inline: 0; width: 100%; }
-.deck-editor .strip-art-layer--layered .strip-art-backdrop-extension { right: 100%; width: 200%; transform: scaleX(-1); }
-.deck-editor .strip-art-layer--layered .strip-art { position: absolute; z-index: 1; inset: 0; display: block; width: 100%; height: 100%; object-fit: fill; opacity: 1; mask-image: linear-gradient(90deg, transparent 0%, #000 38%, #000 100%); -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 38%, #000 100%); }
+.deck-editor .strip-art-layer--layered .strip-art { position: absolute; z-index: 1; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: center var(--strip-focus-y, 50%); opacity: 1; mask-image: linear-gradient(90deg, transparent 0%, #000 70%, #000 100%); -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 70%, #000 100%); }
 .deck-editor .row[role="button"] { cursor: pointer; }
 .deck-editor .row[aria-disabled="true"] { cursor: default; }
 .deck-editor .row[role="button"]:focus-visible { outline: 2px solid #85cfff; outline-offset: 2px; }
