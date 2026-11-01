@@ -8,19 +8,6 @@ export async function request(path, body, signal) {
 }
 
 export async function saveDeckExport(name, blob) {
-  if (!window.pywebview?.api) {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = name;
-    link.style.display = 'none';
-    document.body.append(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    return { name, destination: 'browser' };
-  }
-
   const response = await fetch(`/api/deck-exports?name=${encodeURIComponent(name)}`, {
     method: 'POST', headers: { 'Content-Type': blob.type }, body: blob,
   });

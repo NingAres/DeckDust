@@ -170,6 +170,7 @@ body,button,input,select,textarea{font-variant-numeric:lining-nums tabular-nums;
 .pack-log-settings.embedded .pack-settings-check{margin-top:12px}
 @media(max-width:600px){.sync-quick-settings{grid-template-columns:1fr}.modal.settings-modal{padding-inline:15px}.settings-sections{margin-bottom:10px}.sync-default-method{display:grid;grid-template-columns:1fr 1fr;gap:3px}.sync-default-method legend{grid-column:1/-1}.sync-default-method label{align-items:flex-start;font-size:11px}}
 .modal{overscroll-behavior:contain}
+.toast.toast-in-modal{position:fixed;z-index:10000;bottom:145px;left:50%}
 .sync-quick-settings{grid-template-columns:minmax(0,1.45fr) minmax(220px,.85fr);gap:12px;margin-bottom:17px}
 .sync-default-method{display:grid;grid-template-columns:1fr 1fr;gap:7px;min-width:0;margin:0;padding:7px 9px 9px;border:1px solid #b79a64;border-radius:9px;background:linear-gradient(145deg,#fff8e6b5,#e8d4a46b);box-shadow:inset 0 1px #fff9}
 .sync-default-method legend{grid-column:1/-1;padding:0 5px;color:#624523;font-size:12px;font-weight:700;line-height:1.4}

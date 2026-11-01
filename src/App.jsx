@@ -1,4 +1,5 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Icon from './components/Icon.jsx';
 import useViewTransition from './useViewTransition.js';
 import CollectionGrid from './collection/CollectionGrid.jsx';
@@ -219,7 +220,7 @@ export default function App() {
       <Filters filters={filters} sets={sets} total={result.length} onChange={updateFilters} onMore={() => setModal('filters')} />
     </section>{building && <DeckEditor controller={deckController} cards={cards} cardReferences={deckController.cardReferences} onCard={selectDeckCard} onFinish={finishBuilding} artMode={deckArtMode} />}</div>}
     </main>
-    {notice ? <div className="toast" role="status">{notice}<button aria-label="关闭通知" onClick={() => setNotice('')}><Icon name="close" /></button></div> : null}
+    {notice ? createPortal(<div className={`toast ${document.querySelector('dialog[open]') ? 'toast-in-modal' : ''}`} role="status">{notice}<button aria-label="关闭通知" onClick={() => setNotice('')}><Icon name="close" /></button></div>, document.querySelector('dialog[open]') || document.body) : null}
     <span className="sr-only" role="status">{loading ? '正在载入收藏' : `已找到 ${result.length} 个卡牌版本，第 ${currentPage + 1} 页`}</span>
     <DeckDialogs controller={deckController} cards={cards} cardReferences={deckController.cardReferences} onReferences={setCardReferences} onNotice={setNotice} artMode={deckArtMode} />
     {modal === 'card' && card ? <CardDetails card={card} preferredQuality={selectedQuality || filters.quality} onClose={closeModal} /> : null}
