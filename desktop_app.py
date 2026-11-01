@@ -59,12 +59,12 @@ def serve() -> LocalServer:
 class DesktopApi:
     def __init__(self, export_dir: Path):
         self.export_dir = export_dir
-        self.window = None
+        self._window = None
 
     def choose_deck_json(self):
-        if self.window is None:
+        if self._window is None:
             return None
-        selected = self.window.create_file_dialog(
+        selected = self._window.create_file_dialog(
             webview.FileDialog.OPEN,
             directory=str(self.export_dir),
             allow_multiple=False,
@@ -112,7 +112,7 @@ def _run_application(lock) -> int:
         export_dir = deck_export_directory()
         api = DesktopApi(export_dir)
         window = webview.create_window(APP_NAME, _frontend_url(), width=1520, height=910, min_size=(980, 680), js_api=api)
-        api.window = window
+        api._window = window
         user_data = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / APP_NAME / "WebView"
         webview.start(debug=False, private_mode=False, storage_path=str(user_data))
     except Exception as error:
