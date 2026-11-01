@@ -6,7 +6,9 @@ import { saveDeckExport } from '../collection/api.js';
 
 const NORMAL_DUST = { COMMON: 40, RARE: 100, EPIC: 400, LEGENDARY: 1600 };
 const GOLD_DUST = { COMMON: 400, RARE: 800, EPIC: 1600, LEGENDARY: 3200 };
-const QUALITY_COLORS = { normal: '#fff0cf', golden: '#ffcf24', diamond: '#72e8ff', signature: '#42e0b6' };
+const RARITY_COLORS = {
+  FREE: '#b9bdc1', COMMON: '#f4ead6', RARE: '#43bcff', EPIC: '#c47be8', LEGENDARY: '#ff9f3d',
+};
 const safeName = name => String(name || '套牌').replace(/[<>:"/\\|?*]/g, '_').slice(0, 80);
 
 async function getArt(card, type = 'strip') {
@@ -106,61 +108,61 @@ function drawCurve(ctx, curve, x, y, width, height) {
   });
 }
 
-function drawRow(ctx, row, image, rarityImage, x, y, width, height, mode) {
+function drawRow(ctx, row, image, x, y, width, height, mode) {
   roundedRect(ctx, x, y, width, height, 5);
   ctx.save(); ctx.clip();
   ctx.fillStyle = '#18222d'; ctx.fillRect(x, y, width, height);
+  const focusY = row.card?.type === 'MINION' || row.card?.type === 'HERO' ? .24 : .5;
   if (image && mode === 'layered') {
-    ctx.save(); ctx.filter = 'blur(9px) saturate(.85)';
-    ctx.drawImage(image, ...coverCrop(image, x - 8, y - 8, width + 16, height + 16, row.card?.type === 'MINION' ? .25 : .5)); ctx.restore();
-    const artWidth = width * .62;
-    const layer = document.createElement('canvas'); layer.width = Math.ceil(artWidth); layer.height = height;
-    const layerCtx = layer.getContext('2d');
-    layerCtx.drawImage(image, ...coverCrop(image, 0, 0, artWidth, height, row.card?.type === 'MINION' ? .25 : .5));
-    const mask = layerCtx.createLinearGradient(0, 0, artWidth, 0);
-    mask.addColorStop(0, 'rgba(0,0,0,0)'); mask.addColorStop(.2, 'rgba(0,0,0,.2)'); mask.addColorStop(.62, '#000'); mask.addColorStop(1, '#000');
-    layerCtx.globalCompositeOperation = 'destination-in'; layerCtx.fillStyle = mask; layerCtx.fillRect(0, 0, artWidth, height);
-    ctx.drawImage(layer, x + width - artWidth, y);
+    ctx.save(); ctx.filter = 'blur(12px) saturate(.88)'; ctx.globalAlpha = .76;
+    ctx.drawImage(image, ...coverCrop(image, x - 10, y - 10, width + 20, height + 20, focusY)); ctx.restore();
+    const artWidth = Math.min(width * .72, height * image.width / image.height);
+    const artX = x + width - artWidth;
+    ctx.save(); roundedRect(ctx, artX, y, artWidth, height, 0); ctx.clip();
+    ctx.drawImage(image, ...coverCrop(image, artX, y, artWidth, height, focusY));
+    const mask = ctx.createLinearGradient(artX, 0, artX + artWidth, 0);
+    mask.addColorStop(0, 'rgba(0,0,0,0)'); mask.addColorStop(.46, 'rgba(0,0,0,.08)');
+    mask.addColorStop(.78, '#000'); mask.addColorStop(1, '#000');
+    ctx.globalCompositeOperation = 'destination-in'; ctx.fillStyle = mask; ctx.fillRect(artX, y, artWidth, height); ctx.restore();
   } else if (image) {
-    ctx.drawImage(image, ...coverCrop(image, x + width * .35, y, width * .65, height, row.card?.type === 'MINION' ? .25 : .5));
+    ctx.drawImage(image, ...coverCrop(image, x, y, width, height, focusY));
   }
   const overlay = ctx.createLinearGradient(x, y, x + width, y);
-  overlay.addColorStop(0, '#101820f2'); overlay.addColorStop(.52, '#101820b8'); overlay.addColorStop(1, '#10182025');
+  overlay.addColorStop(0, '#101820dc'); overlay.addColorStop(.34, '#101820a6');
+  overlay.addColorStop(.7, '#10182020'); overlay.addColorStop(1, '#10182065');
   ctx.fillStyle = overlay; ctx.fillRect(x, y, width, height);
   ctx.restore();
-  ctx.strokeStyle = QUALITY_COLORS[row.quality] || QUALITY_COLORS.normal; ctx.lineWidth = 1.5;
+  const rarity = row.card?.rarity || 'FREE';
+  const rarityColor = RARITY_COLORS[rarity] || RARITY_COLORS.COMMON;
+  ctx.strokeStyle = rarityColor; ctx.lineWidth = 1.5;
   roundedRect(ctx, x + .75, y + .75, width - 1.5, height - 1.5, 5); ctx.stroke();
   ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
   ctx.fillStyle = '#9bdcff'; ctx.beginPath(); ctx.arc(x + 19, y + height / 2, 12, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#10202c'; ctx.font = '700 14px system-ui, sans-serif'; ctx.fillText(String(row.card?.cost ?? '?'), x + 19, y + height / 2 + 1);
-  const rarity = row.card?.rarity || 'FREE';
-  const hasRarityIcon = rarity !== 'FREE' && !!rarityImage;
-  if (hasRarityIcon) ctx.drawImage(rarityImage, x + 39, y + (height - 18) / 2, 18, 18);
-  ctx.fillStyle = '#fff2d5'; ctx.font = '600 13px system-ui, sans-serif';
+  ctx.fillStyle = '#10202c'; ctx.font = '700 13px system-ui, sans-serif'; ctx.fillText(String(row.card?.cost ?? '?'), x + 19, y + height / 2 + .5);
+  ctx.fillStyle = '#fff2d5'; ctx.font = '600 12px system-ui, sans-serif';
   const name = row.card?.name || `未知卡牌 #${row.id}`;
-  const nameX = x + (hasRarityIcon ? 64 : 39);
-  const maxNameWidth = width - (nameX - x) - 52;
-  let displayName = name; while (displayName.length > 1 && ctx.measureText(displayName).width > maxNameWidth) displayName = `${displayName.slice(0, -2)}…`;
-  ctx.fillText(displayName, nameX, y + height / 2 + 1);
-  const nameWidth = ctx.measureText(displayName).width;
-  const markerX = nameX + nameWidth + 9, markerWidth = 31, markerHeight = 25;
-  ctx.fillStyle = '#101820dd'; roundedRect(ctx, markerX - 5, y + (height - markerHeight) / 2, markerWidth, markerHeight, 6); ctx.fill();
-  ctx.strokeStyle = '#d8c89f88'; ctx.lineWidth = 1; roundedRect(ctx, markerX - 5, y + (height - markerHeight) / 2, markerWidth, markerHeight, 6); ctx.stroke();
-  ctx.textAlign = 'left'; ctx.fillStyle = QUALITY_COLORS[row.quality] || QUALITY_COLORS.normal; ctx.font = '800 14px system-ui, sans-serif';
-  ctx.fillText('×1', markerX, y + height / 2 + 1);
+  const nameX = x + 42, countX = x + width - 12;
+  ctx.textAlign = 'right'; ctx.font = '700 12px system-ui, sans-serif'; ctx.fillStyle = rarityColor;
+  const count = '×1', countWidth = ctx.measureText(count).width;
+  ctx.fillText(count, countX, y + height / 2 + .5);
+  ctx.textAlign = 'left'; ctx.font = '600 12px system-ui, sans-serif';
+  const maxNameWidth = countX - nameX - countWidth - 12;
+  let displayName = name;
+  while (displayName.length > 1 && ctx.measureText(displayName).width > maxNameWidth) {
+    displayName = `${displayName.slice(0, -1)}…`;
+  }
+  ctx.fillStyle = '#fff2d5'; ctx.fillText(displayName, nameX, y + height / 2 + .5);
 }
 
 export async function exportDeckPng(deck, cards, artMode = 'cover') {
   const rows = deckRows(deck, cards);
   const cls = inferExportClass(deck, cards);
   const hero = cards.find(card => card.dbfId === deck.hero) || cards.find(card => card.id === HERO_ART[cls]);
-  const [heroArt, classEmblem, dustIcon, ...rarityIcons] = await Promise.all([
+  const [heroArt, classEmblem, dustIcon] = await Promise.all([
     getPortraitArt(hero),
     loadStaticImage(`/assets/native-ui/class-emblems/${CLASSES.find(([key]) => key === cls)?.[2] || 'Neutral'}.png`),
     loadStaticImage('/assets/pack-icons/dust.png'),
-    ...['common', 'rare', 'epic', 'legendary'].map(key => loadStaticImage(`/assets/pack-icons/${key}.png`)),
   ]);
-  const rarityImages = new Map(['COMMON', 'RARE', 'EPIC', 'LEGENDARY', 'FREE'].map((key, index) => [key, rarityIcons[key === 'FREE' ? 0 : index]]));
   const rowImages = new Map();
   await Promise.all([...new Set(rows.map(row => row.id))].map(async id => {
     const row = rows.find(item => item.id === id);
@@ -213,7 +215,7 @@ export async function exportDeckPng(deck, cards, artMode = 'cover') {
   rows.forEach((row, index) => {
     const column = Math.floor(index / rowsPerColumn), line = index % rowsPerColumn;
     const x = margin + column * (columnWidth + gap), y = startY + line * (rowHeight + rowGap);
-    drawRow(ctx, row, rowImages.get(row.id), rarityImages.get(row.card?.rarity) || rarityImages.get('FREE'), x, y, columnWidth, rowHeight, artMode);
+    drawRow(ctx, row, rowImages.get(row.id), x, y, columnWidth, rowHeight, artMode);
   });
   const codeY = listBottom + 14;
   roundedRect(ctx, margin, codeY, width - margin * 2, codePanelHeight, 7);
