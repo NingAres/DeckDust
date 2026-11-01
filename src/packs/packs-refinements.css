@@ -502,3 +502,17 @@
 @starting-style{.pack-card-line-switch{opacity:0;translate:var(--pack-switch-offset,12px) 0}}
 @media(prefers-reduced-motion:reduce){.pack-card-line-switch{translate:none;transition:opacity 100ms ease-out}}
 
+/* Pending pack review follows the compact per-pack layout used by record details. */
+.pending-pack-view-heading{gap:12px}
+.pending-pack-tabs{display:inline-flex;align-items:center;gap:4px;margin-left:auto}
+.pending-pack-tabs button{min-width:28px;height:27px;padding:0 7px;border:1px solid transparent;border-radius:5px;background:transparent;color:#806139;font:inherit;font-size:11px;line-height:1;cursor:pointer;transition:color 160ms ease,background-color 160ms ease,border-color 160ms ease,transform 160ms ease}
+.pending-pack-tabs button:hover{border-color:#ae8d515e;background:#c7a76224}
+.pending-pack-tabs button.is-active{border-color:#ae8d5190;background:linear-gradient(#f7ebce88,#c7a76238);color:#5b3d1e;font-weight:700;box-shadow:inset 0 1px #fff7}
+.pending-pack-view-heading>time{margin-left:4px;white-space:nowrap}
+.pending-pack-view>.pack-card-line{margin:0 auto;max-width:740px;gap:15px;padding:5px 0 12px;overflow:visible}
+.pending-pack-view>.pack-card-line .pack-card-preview>span{display:flex;align-items:center;justify-content:center;gap:5px;font-size:10px;line-height:1.35}
+.pending-pack-view>.pack-card-line .pack-symbol{width:17px;height:17px;flex:none}
+.pending-pack-view>.pack-card-line .card-art{height:auto;aspect-ratio:256/333}
+.pending-pack-arrows{margin:12px 0 15px}
+@media(max-width:560px){.pending-pack-view-heading{gap:6px}.pending-pack-tabs{gap:1px}.pending-pack-tabs button{min-width:23px;height:24px;padding-inline:5px}.pending-pack-view-heading>time{font-size:9px;margin-left:2px}.pending-pack-view>.pack-card-line{gap:3px}.pending-pack-view>.pack-card-line .pack-card-preview>span{font-size:8px;display:block;overflow-wrap:anywhere}.pending-pack-view>.pack-card-line .pack-symbol{width:14px;height:14px}}
+
