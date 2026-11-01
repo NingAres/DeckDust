@@ -88,7 +88,7 @@ body,button,input,select,textarea{font-variant-numeric:lining-nums tabular-nums;
 .card-details .card-facts dt{line-height:1.5}
 .card-details .card-facts dd{line-height:1.2}
 .card-details .quality-choice{--quality-frame:#82765f;--quality-ink:#514b42;border-color:var(--quality-frame);transition:background-color 150ms ease-out,border-color 150ms ease-out,outline-color 150ms ease-out}
-.card-details .quality-choice.golden{--quality-frame:#f2d000;--quality-ink:#8b7300}
+.card-details .quality-choice.golden{--quality-frame:#ad7900;--quality-ink:#805300;border-width:2px}
 .card-details .quality-choice.diamond{--quality-frame:#35afd1;--quality-ink:#176783}
 .card-details .quality-choice.signature{--quality-frame:#21ad86;--quality-ink:#176b53}
 .card-details .quality-choice[aria-pressed=true]{outline:2px solid var(--quality-frame);outline-offset:1px;border-color:var(--quality-frame);background:#e5d0a2;color:#705531;box-shadow:none}
