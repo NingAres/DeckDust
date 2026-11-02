@@ -83,7 +83,7 @@ export default function Compare({ decks, cards, cardReferences = [], loading, ar
     const cls = deck ? getClass(deck) : '';
     const stats = deck ? deckStats(deck, deckCards) : null;
     return <section className={`comparison-deck-panel ${side.toLowerCase()} ${deck ? 'is-filled' : ''}`}>
-      {deck ? <aside className="deck deck-editor comparison-preview" aria-label={`${side} 套牌预览`}>
+      {deck ? <aside key={String(deck.id)} className="deck deck-editor comparison-preview" aria-label={`${side} 套牌预览`}>
         <div className="deck-hero"><DeckClassArt cardId={cardReferences.find(card=>card.dbfId===deck.hero)?.id||HERO_ART[cls]} fallbackCardId={HERO_ART[cls]} className="deck-class-art"/><ClassEmblem cardClass={cls}/><b>{deck.name}</b></div>
         <div className="deck-info">{cls} · {FORMATS[deck.format]||'标准'} · {stats.total}/{stats.limit} 张 <span className={`saved-tag saved-tag-progress ${stats.missing>0?'is-missing':stats.owned>=stats.limit?'is-complete':'is-partial'}`}>{stats.owned}/{stats.limit}</span></div>
         <div className="deck-list comparison-preview-list">{inheritCompanionVariants(deck,deckCards).entries.slice().sort((x,y)=>(cardMap.get(x.id)?.cost??99)-(cardMap.get(y.id)?.cost??99)||x.id-y.id).flatMap(entry=>{const card=cardMap.get(entry.id),companion=isDeckCompanion(entry.id);return orderDeckVariantsForDisplay(deckEntryVariants(entry,card)).map(({quality,count,missing})=><div className={`row quality-${quality} ${missing?'deck-missing':''}`} key={`${entry.id}-${quality}`} title={`${card?.name||`未知卡牌 #${entry.id}`} · ${quality} ×${count}${companion?' · 随携带卡提供':''}`}>
