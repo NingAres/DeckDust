@@ -101,3 +101,22 @@
 .compare-result-card.quality-golden .compare-result-meta>span{color:#936514;text-shadow:none}
 .compare-result-card.quality-diamond .compare-result-count,.compare-result-card.quality-diamond .compare-result-meta>span{color:#1389ad;text-shadow:0 0 3px #80e9f777}
 .compare-result-card.quality-signature .compare-result-count,.compare-result-card.quality-signature .compare-result-meta>span{color:#168b7b;text-shadow:0 0 3px #75dfc077}
+
+/* Soft, quick transitions for deck selection, preview and code entry. */
+@keyframes compare-option-arrive{from{opacity:0;transform:translate3d(0,9px,0) scale(.985);filter:blur(2px)}to{opacity:1;transform:translate3d(0,0,0) scale(1);filter:blur(0)}}
+@keyframes compare-selected-arrive{0%{opacity:0;transform:translate3d(0,8px,0) scale(.985);filter:blur(3px)}70%{opacity:1;transform:translate3d(0,-1px,0) scale(1.005);filter:blur(0)}100%{transform:translate3d(0,0,0) scale(1)}}
+@keyframes compare-row-arrive{from{opacity:0;transform:translate3d(0,7px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+.deck-options>.deck-option{animation:compare-option-arrive .46s cubic-bezier(.2,.8,.2,1) both;transition:transform .22s cubic-bezier(.2,.8,.2,1),background-color .2s,border-color .2s,box-shadow .2s}
+.deck-options>.deck-option:nth-child(2){animation-delay:35ms}.deck-options>.deck-option:nth-child(3){animation-delay:65ms}.deck-options>.deck-option:nth-child(4){animation-delay:95ms}.deck-options>.deck-option:nth-child(5){animation-delay:125ms}.deck-options>.deck-option:nth-child(n+6){animation-delay:145ms}
+.deck-options>.deck-option:hover{transform:translateX(3px);box-shadow:0 3px 8px #72552a22}
+.chosen-deck,.comparison-selected-overview{animation:compare-selected-arrive .48s cubic-bezier(.2,.8,.2,1) both}
+.comparison-preview{animation:compare-selected-arrive .62s cubic-bezier(.2,.8,.2,1) both}
+.comparison-preview-list>.row{animation:compare-row-arrive .42s cubic-bezier(.2,.8,.2,1) both}
+.comparison-preview-list>.row:nth-child(2){animation-delay:22ms}.comparison-preview-list>.row:nth-child(3){animation-delay:40ms}.comparison-preview-list>.row:nth-child(4){animation-delay:58ms}.comparison-preview-list>.row:nth-child(5){animation-delay:76ms}.comparison-preview-list>.row:nth-child(n+6){animation-delay:90ms}
+.code-entry{animation:compare-option-arrive .42s cubic-bezier(.2,.8,.2,1) both}
+.code-entry textarea{transition:border-color .22s,box-shadow .22s,background-color .22s}
+.code-entry textarea:focus{border-color:#b38745;background-color:#fbf0d7;box-shadow:0 0 0 2px #d7b26344,0 3px 9px #65491c22;outline:none}
+.code-entry .simple-button{transition:transform .2s cubic-bezier(.2,.8,.2,1),filter .2s,box-shadow .2s}
+.code-entry .simple-button:not(:disabled):hover{transform:translateY(-1px);filter:brightness(1.08);box-shadow:0 3px 8px #62481f33}
+.code-entry .simple-button:not(:disabled):active{transform:translateY(1px) scale(.99)}
+@media(prefers-reduced-motion:reduce){.deck-options>.deck-option,.chosen-deck,.comparison-selected-overview,.comparison-preview,.comparison-preview-list>.row,.code-entry{animation:none!important}.deck-options>.deck-option,.code-entry textarea,.code-entry .simple-button{transition:none!important}}
