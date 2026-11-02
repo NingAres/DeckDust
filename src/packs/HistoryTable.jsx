@@ -54,32 +54,29 @@ export default function HistoryTable({ records, catalog = [], pityRecords = reco
     measureCapacity();
     return () => observer.disconnect();
   }, [recordKey, active, visible.length]);
-  async function animatePageOut(element, direction) {
+  async function animatePageOut(element) {
     if (!animatePages || !element) return;
-    const from = { opacity: 1, transform: 'translateX(0)' };
-    const to = { opacity: .4, transform: `translateX(${direction === 'next' ? '-10px' : '10px'})` };
-    await element.animate([from, to], { duration: PACK_MOTION.historyPageExit, easing: 'ease-out' }).finished.catch(() => {});
+    await element.animate([{ opacity: 1 }, { opacity: .4 }],
+      { duration: PACK_MOTION.historyPageExit, easing: 'ease-out' }).finished.catch(() => {});
   }
-  function animatePageIn(element, direction) {
+  function animatePageIn(element) {
     if (!animatePages || !element) return;
-    const from = { opacity: .4, transform: `translateX(${direction === 'next' ? '10px' : '-10px'})` };
-    const to = { opacity: 1, transform: 'translateX(0)' };
-    element.animate([from, to], { duration: PACK_MOTION.historyPageEnter, easing: PACK_MOTION.easing });
+    element.animate([{ opacity: .4 }, { opacity: 1 }],
+      { duration: PACK_MOTION.historyPageEnter, easing: PACK_MOTION.easing });
   }
   async function goPage(next) {
     const element = scrollRef.current;
-    const direction = next > current ? 'next' : 'prev';
-    await animatePageOut(element, direction);
+    await animatePageOut(element);
     setPage(next); if (element) element.scrollTop = 0;
     if (sorted[next * perPage]) onSelect(sorted[next * perPage].id);
-    requestAnimationFrame(() => animatePageIn(element, direction));
+    requestAnimationFrame(() => animatePageIn(element));
   }
   async function changePageSize(nextSize) {
     const element = scrollRef.current;
-    await animatePageOut(element, 'next');
+    await animatePageOut(element);
     setSize(nextSize); setPage(0);
     if (element) element.scrollTop = 0;
-    requestAnimationFrame(() => animatePageIn(element, 'next'));
+    requestAnimationFrame(() => animatePageIn(element));
   }
   return <><div ref={scrollRef} className={`pack-ledger-scroll ${animatePages ? 'pack-page-animated pack-ledger-scroll-fill' : ''}`} style={animatePages ? { '--pack-history-row-height': `${rowHeight}px` } : undefined} tabIndex={0} role="region" aria-label="开包明细"><table className="pack-ledger pack-history-table"><colgroup><col style={{ width: '22%' }} /><col style={{ width: '5%' }} />{Array.from({ length: 8 }, (_, index) => <col key={index} style={{ width: '6.5%' }} />)}<col style={{ width: '8%' }} /><col style={{ width: '9%' }} /><col style={{ width: '4%' }} /></colgroup><thead><tr className="pack-quality-columns"><th className="pack-sticky-series">时间 / 系列</th><th>包数</th>{QUALITY_FIELDS.map(([key, label]) => <th key={key} title={label} className={qualityClass(key)}><span className="pack-quality-heading"><QualitySymbol quality={key} />{QUALITY_SHORT_NAMES[key]}</span></th>)}<th>来源</th><th className="pack-sticky-actions"><span className="sr-only">操作</span></th></tr></thead>
       <tbody>{visible.map(record => <RecordRow key={record.id} record={record} catalog={catalog} pityRecords={pityRecords} active={active} onSelect={onSelect} onDetails={onDetails} />)}{fillRows ? Array.from({ length: Math.max(0, perPage - visible.length) }, (_, index) => <tr key={`placeholder-${index}`} className="pack-placeholder-row" aria-hidden="true"><td colSpan={13} /></tr>) : null}</tbody>
