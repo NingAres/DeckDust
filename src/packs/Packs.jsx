@@ -88,7 +88,7 @@ export default function Packs({ view, cards, onNavigate, onNotice }) {
   useLayoutEffect(() => {
     if (!active || previousRecord.current === active.id) return;
     previousRecord.current = active.id;
-    selectedSheet.current?.animate([{ opacity: 0.12, transform: 'translateY(14px)' }, { opacity: 1, transform: 'translateY(0)' }],
+    selectedSheet.current?.querySelector('.selected-record-body')?.animate([{ opacity: 0.2 }, { opacity: 1 }],
     { duration: 320, easing: 'ease-in-out' });
   }, [active?.id]);
   const isRecords = view === 'pack-records';
