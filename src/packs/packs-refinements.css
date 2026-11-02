@@ -252,8 +252,7 @@
 .pack-detail-counts .pack-quality-detail>b{color:var(--quality-ink)}
 .pack-detail-counts [class*=quality-gold]>b{text-shadow:0 1px #fff0b8,1px 0 #f3cd72,-1px 0 #f3cd72,0 0 5px #dfa73588}
 .pack-detail-counts .quality-signature>b{text-shadow:0 0 3px #c6ffff,0 0 7px #36bdc688}
-.pack-ledger :is(td,th)[class*=quality-]:not(.zero-cards){color:var(--quality-ink)}
-.pack-cycle-table td[class*=quality-]{color:var(--quality-ink)}
+.pack-ledger :is(td,th)[class*=quality-]{color:var(--quality-ink)}
 .pack-ledger td[class*=quality-gold]:not(.zero-cards){text-shadow:0 1px #fff0b8,1px 0 #f3cd72,-1px 0 #f3cd72,0 0 5px #dfa73588}
 .pack-ledger td.quality-signature:not(.zero-cards){text-shadow:0 0 3px #c6ffff,0 0 7px #36bdc688}
 .pack-ledger td .pack-quality-preview-trigger{color:inherit;text-shadow:inherit}
@@ -457,7 +456,6 @@
 .pack-full-overview tfoot th{text-align:left;padding-left:10px}
 .pack-full-overview tfoot th,.pack-full-overview tfoot td{position:sticky;bottom:0;z-index:4;background:#dac69e}
 .pack-full-overview tfoot th:first-child{left:0;z-index:6;background:#dac69e}
-.pack-layout-wide .pack-ledger tbody td[class*=quality-]:not(.zero-cards),.pack-layout-wide .pack-ledger tbody td.legendary,.pack-layout-wide .pack-ledger tbody td.epic{color:#5f4426!important;text-shadow:none!important}
 
 /* Compact pity indicators: keep only the quality, count and progress bar. */
 .pack-pity{padding-block:10px 12px}
