@@ -79,10 +79,10 @@ export default function Compare({ decks, cards, cardReferences = [], loading, ar
     return result;
   };
   const resultCards = (side) => diffs.filter(row=>side==='A'?row.a>row.b:row.b>row.a).flatMap(row=>qualityRows(row).map(finish=>({...row,...finish,side}))); 
-  const Panel = ({ side, deck }) => {
+  const renderPanel = (side, deck) => {
     const cls = deck ? getClass(deck) : '';
     const stats = deck ? deckStats(deck, deckCards) : null;
-    return <section className={`comparison-deck-panel ${side.toLowerCase()} ${deck ? 'is-filled' : ''}`}>
+    return <section key={side} className={`comparison-deck-panel ${side.toLowerCase()} ${deck ? 'is-filled' : ''}`}>
       {deck ? <aside key={String(deck.id)} className="deck deck-editor comparison-preview" aria-label={`${side} 套牌预览`}>
         <div className="deck-hero"><DeckClassArt cardId={cardReferences.find(card=>card.dbfId===deck.hero)?.id||HERO_ART[cls]} fallbackCardId={HERO_ART[cls]} className="deck-class-art"/><ClassEmblem cardClass={cls}/><b>{deck.name}</b></div>
         <div className="deck-info">{cls} · {FORMATS[deck.format]||'标准'} · {stats.total}/{stats.limit} 张 <span className={`saved-tag saved-tag-progress ${stats.missing>0?'is-missing':stats.owned>=stats.limit?'is-complete':'is-partial'}`}>{stats.owned}/{stats.limit}</span></div>
@@ -93,7 +93,7 @@ export default function Compare({ decks, cards, cardReferences = [], loading, ar
     </section>;
   };
   return <section className="compare-workspace">
-    <div className="comparison-center"><div className="comparison-panels"><Panel side="A" deck={a}/><Panel side="B" deck={b}/></div></div>
+    <div className="comparison-center"><div className="comparison-panels">{renderPanel('A',a)}{renderPanel('B',b)}</div></div>
     <aside className={`comparison-controls ${a&&b?'has-both-selected':a||b?'has-one-selected':''}`}><div className="control-heading"><h3>选择对比套牌</h3></div>
       {['A','B'].map(side=>{const deck=sides[side], cls=deck?getClass(deck):'', stats=deck?deckStats(deck,deckCards):null;return <section className={`setup-block ${side.toLowerCase()} ${deck?'selected':''}`} key={side}>
         <div className="setup-side-title"><span className={`side-letter ${side.toLowerCase()}`}>{side}</span><b>{side} 套牌</b></div>
