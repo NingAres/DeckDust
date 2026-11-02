@@ -1,4 +1,4 @@
-/* Keep card/page-turn transforms independent of control feedback. */
+/* Motion in Deck Dust uses the app's authored timings, independent of system or browser motion preferences. */
 /* All dialogs use the shared Modal animation, including card/record details. */
 .modal[open] {
   animation: none !important;
@@ -15,7 +15,6 @@
 
 @keyframes modal-backdrop-enter { from { opacity: 0; } to { opacity: 1; } }
 @keyframes modal-backdrop-exit { from { opacity: 1; } to { opacity: 0; } }
-
 .shell .rail .nav {
   outline: 2px solid transparent;
   outline-offset: 0;
@@ -28,43 +27,35 @@
     opacity 150ms ease-in-out;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .shell button:not(.card) {
-    transition: color 150ms ease-in-out, background-color 150ms ease-in-out,
-      border-color 150ms ease-in-out, box-shadow 150ms ease-in-out,
-      opacity 150ms ease-in-out, filter 220ms ease-in-out,
-      transform 220ms ease-in-out, scale 180ms ease-in-out,
-      translate 220ms ease-in-out, outline-color 220ms ease-in-out;
+.shell button:not(.card) {
+  transition: color 150ms ease-in-out, background-color 150ms ease-in-out,
+    border-color 150ms ease-in-out, box-shadow 150ms ease-in-out,
+    opacity 150ms ease-in-out, filter 220ms ease-in-out,
+    transform 220ms ease-in-out, scale 180ms ease-in-out,
+    translate 220ms ease-in-out, outline-color 220ms ease-in-out;
+}
+
+.shell button:not(.card):not(:disabled):not([aria-disabled="true"]):active {
+  scale: 0.96;
+  translate: 0 1px;
+}
+
+@media (hover: hover) {
+  .shell :is(.gold-button, .simple-button, .icon-button):not(:disabled):hover {
+    filter: brightness(1.16);
+    translate: 0 -3px;
+    scale: 1.025;
   }
 
-  .shell button:not(.card):not(:disabled):not([aria-disabled="true"]):active {
-    scale: 0.96;
-    translate: 0 1px;
+  .shell .rail .nav:not(:disabled):hover {
+    translate: 4px 0;
   }
 
-  @media (hover: hover) {
-    .shell :is(.gold-button, .simple-button, .icon-button):not(:disabled):hover {
-      filter: brightness(1.16);
-      translate: 0 -3px;
-      scale: 1.025;
-    }
-
-    .shell .rail .nav:not(:disabled):hover {
-      translate: 4px 0;
-    }
-
-    .shell .rail .nav.active b {
-      scale: 1.1;
-    }
-  }
-
-  .shell .rail .nav b {
-    transition: scale 220ms ease-in-out;
+  .shell .rail .nav.active b {
+    scale: 1.1;
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .shell button {
-    transition: opacity 100ms ease-in-out !important;
-  }
+.shell .rail .nav b {
+  transition: scale 220ms ease-in-out;
 }

@@ -23,7 +23,7 @@
 - Full vertical card art belongs in the collection grid. Deck lists use horizontal card strips with variant-specific gold, faceted-diamond, and signature/alternate-art treatments.
 - Preserve card image ratio, reserve layout dimensions, lazy-load offscreen art, preload only likely-to-be-seen cards, and fall back clearly when an external variant image is absent.
 - Bundle fonts, CSS, and icons for the desktop build; runtime UI must not depend on font or style CDNs.
-- Use restrained motion, visible keyboard focus, semantic button labels, and readable contrast. Respect reduced-motion preferences.
+- Use restrained, authored motion, visible keyboard focus, semantic button labels, and readable contrast. Do not branch on system or browser reduced-motion preferences; keep animation behavior stable across environments.
 
 ### Color Palette
 
@@ -203,7 +203,7 @@
 gsap.from(el, { opacity: 0, y: 12, duration: 0.35, ease: 'power1.out', scrollTrigger: { trigger: el, start: 'top 90%', toggleActions: 'play none none reverse' } });
 ```
 
-**Framework notes:** Requires the ScrollTrigger plugin registered once via gsap.registerPlugin(ScrollTrigger); Use matchMedia('(prefers-reduced-motion: reduce)') to skip non-essential motion and render the final state immediately
+**Framework notes:** Requires the ScrollTrigger plugin registered once via gsap.registerPlugin(ScrollTrigger). Use the page's authored motion timings consistently.
 
 - ✅ Keep the y offset small (8-16px) so it reads as a fade, not a slide
 - ❌ Don't reveal below-the-fold content needed for SEO/crawlers as invisible-by-default without a no-JS fallback
@@ -237,7 +237,7 @@ Before delivering any UI code, verify:
 - [ ] Hover states with smooth transitions (150-300ms)
 - [ ] Light mode: text contrast 4.5:1 minimum
 - [ ] Focus states visible for keyboard navigation
-- [ ] `prefers-reduced-motion` respected
+- [ ] Motion uses stable, authored timings and does not change based on system or browser preferences
 - [ ] Responsive: 375px, 768px, 1024px, 1440px
 - [ ] No content hidden behind fixed navbars
 - [ ] No horizontal scroll on mobile

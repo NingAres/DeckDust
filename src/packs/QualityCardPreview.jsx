@@ -40,14 +40,13 @@ export default function QualityCardPreview({ count, label, cards, children }) {
       top: Number.parseFloat(element.style.top) || element.offsetTop,
       width: element.offsetWidth, height: element.offsetHeight };
     const frame = { opacity: getComputedStyle(element).opacity, transform: getComputedStyle(element).transform };
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const endTransform = source && !reduced
+    const endTransform = source
       ? `translate(${source.left - box.left}px, ${source.top - box.top}px) scale(${source.width / box.width}, ${source.height / box.height})`
-      : reduced ? 'none' : 'scale(0.2)';
+      : 'scale(0.2)';
     animation.current?.cancel();
     closing.current = true;
     animation.current = element.animate([frame, { opacity: 0, transform: endTransform }],
-      { duration: reduced ? 130 : 360, easing: 'ease-in-out', fill: 'forwards' });
+      { duration: 360, easing: 'ease-in-out', fill: 'forwards' });
     animation.current.finished.then(() => {
       closing.current = false;
       element.hidePopover();
@@ -80,15 +79,14 @@ export default function QualityCardPreview({ count, label, cards, children }) {
     element.style.top = `${top}px`;
     element.style.transformOrigin = 'top left';
     const box = element.getBoundingClientRect();
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     closing.current = false;
     animation.current?.cancel();
-    const start = source && !reduced
+    const start = source
       ? `translate(${source.left - box.left}px, ${source.top - box.top}px) scale(${source.width / box.width}, ${source.height / box.height})`
-      : reduced ? 'none' : 'scale(0.2)';
+      : 'scale(0.2)';
     animation.current = element.animate([
       { opacity: 0, transform: start }, { opacity: 1, transform: 'none' },
-    ], { duration: reduced ? 150 : 380, easing: 'ease-in-out' });
+    ], { duration: 380, easing: 'ease-in-out' });
 
     function onKey(event) {
       if (event.key === 'Escape') { event.preventDefault(); close(); }

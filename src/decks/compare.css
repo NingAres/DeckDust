@@ -131,12 +131,3 @@
 .comparison-panel-empty{animation:compare-empty-arrive .48s cubic-bezier(.16,1,.3,1) both}
 .comparison-preview-list>.row{animation:compare-row-arrive-clear .58s cubic-bezier(.16,1,.3,1) both}
 .comparison-preview-list>.row:nth-child(2){animation-delay:45ms}.comparison-preview-list>.row:nth-child(3){animation-delay:75ms}.comparison-preview-list>.row:nth-child(4){animation-delay:105ms}.comparison-preview-list>.row:nth-child(5){animation-delay:135ms}.comparison-preview-list>.row:nth-child(n+6){animation-delay:165ms}
-/* compare motion is an explicit part of this interaction; re-enable it over the app-wide reset */
-@media(prefers-reduced-motion:reduce){
-  .compare-workspace .deck-options>.deck-option{animation:compare-option-arrive .46s cubic-bezier(.2,.8,.2,1) both!important}
-  .compare-workspace .chosen-deck,.compare-workspace .comparison-selected-overview{animation:compare-selected-arrive .55s cubic-bezier(.16,1,.3,1) both!important}
-  .compare-workspace .comparison-preview{animation:compare-deck-arrive .82s cubic-bezier(.16,1,.3,1) both!important}
-  .compare-workspace .comparison-panel-empty{animation:compare-empty-arrive .48s cubic-bezier(.16,1,.3,1) both!important}
-  .compare-workspace .comparison-preview-list>.row{animation:compare-row-arrive-clear .58s cubic-bezier(.16,1,.3,1) both!important}
-  .compare-workspace .code-entry{animation:compare-option-arrive .42s cubic-bezier(.2,.8,.2,1) both!important}
-}

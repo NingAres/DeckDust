@@ -42,15 +42,14 @@ export default function DeckEditor({ controller, cards, cardReferences = [], onC
     if (!previous) return;
     const added = [...current].filter(([key, count]) => count > (previous.get(key) || 0));
     if (!added.length) return;
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     for (const [key] of added) {
       const [id, quality] = key.split('-');
       const row = document.querySelector(`.deck-editor .row[data-card-id="${id}"][data-quality="${quality}"]`);
       if (!row) continue;
-      const animation = row.animate(reducedMotion ? [{ opacity: 0.75 }, { opacity: 1 }] : [
+      const animation = row.animate([
         { opacity: 0, transform: 'translateY(10px) scale(.97)' },
         { opacity: 1, transform: 'translateY(0) scale(1)' },
-      ], { duration: reducedMotion ? 100 : 260, easing: 'cubic-bezier(.2,.8,.2,1)' });
+      ], { duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)' });
       animation.onfinish = () => animation.cancel();
     }
   }, [displayEntries, byId]);

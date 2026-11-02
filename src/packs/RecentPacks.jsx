@@ -19,16 +19,15 @@ export default function RecentPacks({ records, cards, onClose }) {
   const visible = matching.slice(0, limit);
   async function transitionResults(update) {
     const element = resultsRef.current;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (element) {
-      const exitFrames = reduced ? [{ opacity: 1 }, { opacity: .55 }] : [{ opacity: 1, transform: 'translateY(0)' }, { opacity: .45, transform: 'translateY(-8px)' }];
-      await element.animate(exitFrames, { duration: reduced ? 120 : 130, easing: 'ease-out' }).finished.catch(() => {});
+      const exitFrames = [{ opacity: 1, transform: 'translateY(0)' }, { opacity: .45, transform: 'translateY(-8px)' }];
+      await element.animate(exitFrames, { duration: 260, easing: 'ease-out' }).finished.catch(() => {});
     }
     update();
     requestAnimationFrame(() => {
       if (!element) return;
-      const enterFrames = reduced ? [{ opacity: .55 }, { opacity: 1 }] : [{ opacity: .45, transform: 'translateY(8px)' }, { opacity: 1, transform: 'translateY(0)' }];
-      element.animate(enterFrames, { duration: reduced ? 120 : 240, easing: 'cubic-bezier(.2,.75,.25,1)' });
+      const enterFrames = [{ opacity: .45, transform: 'translateY(8px)' }, { opacity: 1, transform: 'translateY(0)' }];
+      element.animate(enterFrames, { duration: 420, easing: 'cubic-bezier(.2,.75,.25,1)' });
     });
   }
   return <Modal title="最近开包记录" className="pack-dialog pack-recent-dialog" onClose={onClose}>

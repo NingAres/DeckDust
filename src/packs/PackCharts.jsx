@@ -92,15 +92,14 @@ export default function PackCharts({ row, onClose }) {
   async function switchChart(next) {
     if (next === chartType || chartSwitching) return;
     const element = chartVisualRef.current;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     setChartSwitching(true);
     try {
-      if (element && !reduced) await element.animate([
+      if (element) await element.animate([
         { opacity: 1, transform: 'translateX(0) scale(1)', filter: 'blur(0)' },
         { opacity: 0, transform: `translateX(${next === 'pie' ? '-18px' : '18px'}) scale(.94)`, filter: 'blur(3px)' },
       ], { duration: 220, easing: 'cubic-bezier(.4,0,.8,.4)', fill: 'forwards' }).finished;
       flushSync(() => setChartType(next));
-      if (element && !reduced) {
+      if (element) {
         element.getAnimations().forEach(animation => animation.cancel());
         await element.animate([
           { opacity: 0, transform: `translateX(${next === 'pie' ? '18px' : '-18px'}) scale(.94)`, filter: 'blur(3px)' },

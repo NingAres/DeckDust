@@ -36,10 +36,8 @@ function PityPanel({ set, type, records, onChooseSet }) {
   useLayoutEffect(() => {
     if (previous.current.set === set && previous.current.type === type) return;
     previous.current = { set, type };
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    panel.current?.animate(reduced ? [{ opacity: 0.45 }, { opacity: 1 }]
-      : [{ opacity: 0.12, transform: 'translateY(14px)' }, { opacity: 1, transform: 'translateY(0)' }],
-    { duration: reduced ? 140 : 320, easing: 'ease-in-out' });
+    panel.current?.animate([{ opacity: 0.12, transform: 'translateY(14px)' }, { opacity: 1, transform: 'translateY(0)' }],
+    { duration: 320, easing: 'ease-in-out' });
   }, [set, type]);
   return <section ref={panel} className="pack-pity"><div className="pack-section-heading"><h2>保底进度</h2></div>
     {!set ? <div className="pack-pity-empty"><Gem /><h3>先选择一个扩展包</h3><p>不同扩展包与卡包类型分别计算，全部记录没有统一保底。</p><button className="simple-button" onClick={onChooseSet}>选择扩展包</button></div> : <>
@@ -90,10 +88,8 @@ export default function Packs({ view, cards, onNavigate, onNotice }) {
   useLayoutEffect(() => {
     if (!active || previousRecord.current === active.id) return;
     previousRecord.current = active.id;
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    selectedSheet.current?.animate(reduced ? [{ opacity: 0.4 }, { opacity: 1 }]
-      : [{ opacity: 0.12, transform: 'translateY(14px)' }, { opacity: 1, transform: 'translateY(0)' }],
-    { duration: reduced ? 140 : 320, easing: 'ease-in-out' });
+    selectedSheet.current?.animate([{ opacity: 0.12, transform: 'translateY(14px)' }, { opacity: 1, transform: 'translateY(0)' }],
+    { duration: 320, easing: 'ease-in-out' });
   }, [active?.id]);
   const isRecords = view === 'pack-records';
   const isAnalysis = view === 'pack-analysis';

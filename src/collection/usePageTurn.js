@@ -13,7 +13,7 @@ export default function usePageTurn({ page, filterKey, loading, pages, onPage })
       const saved = localStorage.getItem('deck-dust-page-motion');
       if (saved !== null) return saved === 'on';
     } catch { /* Storage may be unavailable in private windows. */ }
-    return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    return true;
   });
   const toggleMotion = () => setMotionEnabled(current => {
     try { localStorage.setItem('deck-dust-page-motion', current ? 'off' : 'on'); } catch { /* Keep the session preference. */ }

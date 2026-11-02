@@ -57,6 +57,6 @@
 - In the collection grid, never stretch cards. Fit the whole card frame to the slot, remove source edge padding only when safe, and keep the natural card ratio. Reserve the slot before image load.
 - In horizontal deck rows, show cropped artwork/tile, mana gem, name, count, and compact quality treatment. Gold, diamond, and signature/alternate-art rows use distinct gold, faceted blue, and signature pink/ink frames plus readable labels; do not rely on color alone.
 - Use real variant images when the configured image source provides them. For missing variants, use the base image with a clear quality frame/label; never imply the base image is a true premium render.
-- Keep interactions restrained and immediate; respect reduced motion. Use keyboard-visible focus and semantic controls.
+- Keep interactions restrained and immediate, using stable authored animation timings across environments. Use keyboard-visible focus and semantic controls.
 - Use local bundled fonts and assets so the packaged desktop build does not depend on Google Fonts, Tailwind CDN, or an icon CDN at runtime.
 
