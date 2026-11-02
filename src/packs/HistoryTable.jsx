@@ -55,17 +55,19 @@ export default function HistoryTable({ records, catalog = [], pityRecords = reco
     return () => observer.disconnect();
   }, [recordKey, active, visible.length]);
   async function animatePageOut(element) {
-    if (!animatePages || !element) return;
-    const animation = element.animate([{ opacity: 1 }, { opacity: 0 }], {
+    const pageContent = element?.querySelector('tbody');
+    if (!animatePages || !pageContent) return;
+    const animation = pageContent.animate([{ opacity: 1 }, { opacity: 0 }], {
       duration: PACK_MOTION.historyPageExit, easing: PACK_MOTION.stationaryEasing, fill: 'forwards',
     });
     await animation.finished.catch(() => {});
     return animation;
   }
   function animatePageIn(element, previousAnimation) {
-    if (!animatePages || !element) return;
+    const pageContent = element?.querySelector('tbody');
+    if (!animatePages || !pageContent) return;
     previousAnimation?.cancel();
-    element.animate([{ opacity: 0 }, { opacity: 1 }], {
+    pageContent.animate([{ opacity: 0 }, { opacity: 1 }], {
       duration: PACK_MOTION.historyPageEnter, easing: PACK_MOTION.stationaryEasing,
     });
   }
