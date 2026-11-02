@@ -6,6 +6,7 @@ import PackArt from './PackArt.jsx';
 import QualityCardPreview from './QualityCardPreview.jsx';
 import { recordedCards } from './recorded-cards.js';
 import PackPityPreview from './PackPityPreview.jsx';
+import { PACK_MOTION } from './pack-motion.js';
 
 function qualityClass(key) { return `quality-${key} ${key.startsWith('gold') ? 'gold-quality' : ''}`; }
 
@@ -55,17 +56,15 @@ export default function HistoryTable({ records, catalog = [], pityRecords = reco
   }, [recordKey, active, visible.length]);
   async function animatePageOut(element, direction) {
     if (!animatePages || !element) return;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const from = reduced ? { opacity: 1 } : { opacity: 1, transform: 'translateX(0)' };
-    const to = reduced ? { opacity: .55 } : { opacity: .4, transform: `translateX(${direction === 'next' ? '-10px' : '10px'})` };
-    await element.animate([from, to], { duration: reduced ? 120 : 140, easing: 'ease-out' }).finished.catch(() => {});
+    const from = { opacity: 1, transform: 'translateX(0)' };
+    const to = { opacity: .4, transform: `translateX(${direction === 'next' ? '-10px' : '10px'})` };
+    await element.animate([from, to], { duration: PACK_MOTION.historyPageExit, easing: 'ease-out' }).finished.catch(() => {});
   }
   function animatePageIn(element, direction) {
     if (!animatePages || !element) return;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const from = reduced ? { opacity: .55 } : { opacity: .4, transform: `translateX(${direction === 'next' ? '10px' : '-10px'})` };
-    const to = reduced ? { opacity: 1 } : { opacity: 1, transform: 'translateX(0)' };
-    element.animate([from, to], { duration: reduced ? 120 : 250, easing: 'cubic-bezier(.2,.75,.25,1)' });
+    const from = { opacity: .4, transform: `translateX(${direction === 'next' ? '10px' : '-10px'})` };
+    const to = { opacity: 1, transform: 'translateX(0)' };
+    element.animate([from, to], { duration: PACK_MOTION.historyPageEnter, easing: PACK_MOTION.easing });
   }
   async function goPage(next) {
     const element = scrollRef.current;

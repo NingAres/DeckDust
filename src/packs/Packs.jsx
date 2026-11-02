@@ -6,6 +6,7 @@ import ExpansionManager from './ExpansionManager.jsx';
 import HistoryTable from './HistoryTable.jsx';
 import PackAnalysis from './PackAnalysis.jsx';
 import PackOverview from './PackOverview.jsx';
+import { PACK_MOTION } from './pack-motion.js';
 import RecentPacks from './RecentPacks.jsx';
 import PackArt from './PackArt.jsx';
 import RecordCardDetails from './RecordCardDetails.jsx';
@@ -69,11 +70,10 @@ export default function Packs({ view, cards, onNavigate, onNotice }) {
   const [sort, setSort] = useState('count');
   const filterContentRef = useRef(null);
   function transitionFilteredContent(update, search = false) {
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     update();
     requestAnimationFrame(() => filterContentRef.current?.animate(
-      reduced ? [{ opacity: .55 }, { opacity: 1 }] : [{ opacity: .2 }, { opacity: 1 }],
-      { duration: reduced ? 120 : search ? 170 : 300, easing: 'cubic-bezier(.2,0,0,1)' },
+      [{ opacity: .2 }, { opacity: 1 }],
+      { duration: search ? 220 : PACK_MOTION.contentFade, easing: PACK_MOTION.easing },
     ));
   }
   const today = new Date().toLocaleDateString('sv-SE');

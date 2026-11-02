@@ -3,6 +3,7 @@ import CardArt from './PackCardArt.jsx';
 import Icon from '../components/Icon.jsx';
 import { QualitySymbol } from './PackSymbol.jsx';
 import { recordedCards } from './recorded-cards.js';
+import { PACK_MOTION } from './pack-motion.js';
 
 export default function RecordCardDetails({ record, catalog }) {
   const details = recordedCards(record, catalog);
@@ -24,7 +25,7 @@ export default function RecordCardDetails({ record, catalog }) {
   return <section className="record-card-details"><div className="pack-section-heading"><h3>本包卡牌 {packs.length > 1 ? <small>第 {activePack + 1} / {packs.length} 包</small> : null}</h3>
     {packs.length > 1 ? <label className="record-pack-picker record-pack-picker-compact"><select value={activePack} aria-label="快速选择卡包" onChange={event => changePack(Number(event.target.value))}>{packs.map((pack, index) => <option key={pack.id || index} value={index}>{index + 1}</option>)}</select><Icon name="right" className="record-pack-picker-chevron" /></label> : null}
   </div>
-    <div className="pack-card-line pack-card-line-switch" key={selectedPack.id || activePack} style={{ '--pack-switch-offset': `${switchDirection * 12}px` }}>{selectedPack.cards.map((entry, index) => <div className="pack-card-preview" key={`${entry.card.id}-${entry.qualityKey}-${index}`} data-card-id={entry.card.id} data-quality={entry.qualityKey}><CardArt card={entry.card} quality={entry.quality} /><span><QualitySymbol quality={entry.qualityKey} />{entry.card.name}</span></div>)}</div>
+    <div className="pack-card-line pack-card-line-switch" key={selectedPack.id || activePack} style={{ '--pack-switch-offset': `${switchDirection * 12}px`, '--pack-switch-duration': `${PACK_MOTION.cardPackSwitch}ms`, '--pack-switch-easing': PACK_MOTION.easing }}>{selectedPack.cards.map((entry, index) => <div className="pack-card-preview" key={`${entry.card.id}-${entry.qualityKey}-${index}`} data-card-id={entry.card.id} data-quality={entry.qualityKey}><CardArt card={entry.card} quality={entry.quality} /><span><QualitySymbol quality={entry.qualityKey} />{entry.card.name}</span></div>)}</div>
     {packs.length > 1 ? <nav className="record-pack-arrows" aria-label="切换卡包"><button type="button" className="record-pack-arrow" aria-label="上一包" disabled={activePack === 0} onClick={() => changePack(activePack - 1)}><Icon name="left" /></button><span className="sr-only" aria-live="polite">第 {activePack + 1} / {packs.length} 包</span><button type="button" className="record-pack-arrow" aria-label="下一包" disabled={activePack >= packs.length - 1} onClick={() => changePack(activePack + 1)}><Icon name="right" /></button></nav> : null}
   </section>;
 }
