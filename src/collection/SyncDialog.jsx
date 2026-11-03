@@ -119,15 +119,14 @@ export default function SyncDialog({ snapshot, onClose, onUpdated, syncPreferenc
         <Icon name="infoCircle" />
         <span className="settings-about-tooltip" role="tooltip" aria-hidden="true">
           <strong>Deck Dust <small>v{packageInfo.version}</small></strong>
-          <span>炉石传说收藏管理、套牌构筑与开包记录工具。</span>
-          <span className="settings-about-author"><Icon name="user" />作者：柠</span>
+          <span>炉石传说收藏、套牌构筑和开包记录工具 · 作者：柠</span>
         </span>
       </span>
       <span className="settings-header-icon is-static settings-mail-trigger" role="img" tabIndex={0}
-        aria-label="如需联系作者，请发送邮件至这个邮箱：ning_1004@126.com">
+        aria-label="如需联系作者，请发送邮件至邮箱：ning_1004@126.com">
         <Icon name="mail" />
         <span className="settings-mail-tooltip" role="tooltip" aria-hidden="true">
-          <span>如需联系作者，请发送邮件至这个邮箱：</span>
+          <span>如需联系作者，请发送邮件至邮箱：</span>
           <strong>ning_1004@126.com</strong>
         </span>
       </span>
