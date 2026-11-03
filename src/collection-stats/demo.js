@@ -1,4 +1,13 @@
 // Illustrative UI fixtures only. Never merge these counts into user collection data.
+import { SET_NAMES } from '../collection/model.js';
+import { SET_RELEASE_ORDER } from '../collection/set-order.js';
+
+// Current catalogue rotation: 2025 + 2026 releases and Core. Wild includes
+// Standard expansions too; it is not the complement of the Standard pool.
+export const STANDARD_SET_IDS = new Set([
+  'CORE', 'EMERALD_DREAM', 'THE_LOST_CITY', 'TIME_TRAVEL',
+  'CATACLYSM', 'ESCAPEFROM_VIOLET_HOLD', 'BE',
+]);
 export const RARITIES = [
   { key: 'common', name: '普通', color: '#807b69' },
   { key: 'rare', name: '稀有', color: '#397da1' },
@@ -6,24 +15,20 @@ export const RARITIES = [
   { key: 'legendary', name: '传说', color: '#ba792a' },
 ];
 
-const fixtures = [
-  ['time', '穿越时间流', 'standard', [68, 47, 18, 16], [14, 8, 4, 3]],
-  ['city', '安戈洛龟途', 'standard', [72, 51, 23, 21], [21, 12, 6, 5]],
-  ['dream', '漫游翡翠梦境', 'standard', [72, 54, 25, 23], [27, 16, 8, 6]],
-  ['space', '深暗领域', 'wild', [72, 52, 24, 22], [32, 20, 9, 8]],
-  ['island', '胜地历险记', 'wild', [72, 54, 27, 25], [38, 24, 12, 10]],
-  ['workshop', '威兹班的工坊', 'wild', [72, 54, 27, 27], [43, 29, 15, 12]],
-];
-
-export const DEMO_SETS = fixtures.map(([id, name, format, normal, golden], index) => ({
-  id, name, format,
+export const DEMO_SETS = SET_RELEASE_ORDER.filter(id => SET_NAMES[id]).map((id, index) => ({
+  id, name: SET_NAMES[id], format: STANDARD_SET_IDS.has(id) ? 'standard' : id === 'EVENT' ? 'other' : 'wild',
   rarities: RARITIES.map((rarity, i) => {
     const total = [72, 54, 27, 27][i];
+    const normal = Math.round(total * (0.6 + ((index * 7 + i * 3) % 39) / 100));
+    const golden = Math.round(total * (0.08 + ((index * 3 + i * 5) % 35) / 100));
     // A golden version may cover a type missing from the normal collection.
-    const any = Math.min(total, normal[i] + (index < 4 ? [0, 1, 1, 2][i] : 0));
-    return { ...rarity, total, normal: normal[i], golden: golden[i], any };
+    const any = Math.min(total, normal + [0, 1, 1, 2][i]);
+    return { ...rarity, total, normal, golden, any };
   }),
 }));
+
+export const setsForMode = mode => DEMO_SETS.filter(set =>
+  mode === 'all' || (mode === 'standard' ? set.format === 'standard' : set.format !== 'other'));
 
 export const sum = (rows, key) => rows.reduce((value, row) => value + row[key], 0);
 export const completion = (owned, total) => total ? Math.round(owned / total * 1000) / 10 : 0;
