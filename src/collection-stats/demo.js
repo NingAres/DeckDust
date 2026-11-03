@@ -15,15 +15,24 @@ export const RARITIES = [
   { key: 'legendary', name: '传说', color: '#ba792a' },
 ];
 
+// Variant lists contain card identities, so overlapping premium finishes count once.
+export const premiumLegendaryTypes = ({ golden = [], diamond = [], signature = [] }) =>
+  new Set([...golden, ...diamond, ...signature]).size;
+
 export const DEMO_SETS = SET_RELEASE_ORDER.filter(id => SET_NAMES[id]).map((id, index) => ({
   id, name: SET_NAMES[id], format: STANDARD_SET_IDS.has(id) ? 'standard' : id === 'EVENT' ? 'other' : 'wild',
   rarities: RARITIES.map((rarity, i) => {
     const total = [72, 54, 27, 27][i];
     const normal = Math.round(total * (0.6 + ((index * 7 + i * 3) % 39) / 100));
-    const golden = Math.round(total * (0.08 + ((index * 3 + i * 5) % 35) / 100));
+    const goldenOnly = Math.round(total * (0.08 + ((index * 3 + i * 5) % 35) / 100));
+    const diamond = i === 3 ? 2 : 0, signature = i === 3 ? 2 : 0;
+    const golden = i === 3 ? premiumLegendaryTypes({
+      golden: Array.from({ length: goldenOnly }, (_, card) => card),
+      diamond: [goldenOnly - 1, goldenOnly], signature: [goldenOnly, goldenOnly + 1],
+    }) : goldenOnly;
     // A golden version may cover a type missing from the normal collection.
     const any = Math.min(total, normal + [0, 1, 1, 2][i]);
-    return { ...rarity, total, normal, golden, any };
+    return { ...rarity, total, normal, golden, goldenOnly, diamond, signature, any };
   }),
 }));
 
