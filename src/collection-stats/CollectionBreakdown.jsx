@@ -2,7 +2,7 @@ import { useId, useState } from 'react';
 import Icon from '../components/Icon.jsx';
 import PackSymbol from '../packs/PackSymbol.jsx';
 import Changing from './Changing.jsx';
-import { GOLD_COLORS, ownedKey, raritySegments, RARITIES, completion, number, sum } from './demo.js';
+import { GOLD_COLORS, ownedKey, raritySegments, RARITIES, completion, number, sum } from './model.js';
 
 export const QUALITIES = [['any', '全部品质'], ['normal', '普通卡'], ['golden', '金卡']];
 
@@ -90,7 +90,7 @@ export default function CollectionBreakdown({ sets, title, quality, onQuality, s
   const rarities = RARITIES.map((rarity, i) => ({ ...rarity,
     ...Object.fromEntries(['total', 'any', 'normal', 'golden', 'goldenOnly', 'diamond', 'signature'].map(key =>
       [key, sets.reduce((n, set) => n + (set.rarities[i][key] || 0), 0)])),
-  }));
+  })).filter(row => row.total > 0);
   const total = sum(rarities, 'total'), any = sum(rarities, 'any');
   const golden = quality === 'golden', mixed = quality === 'mixed', key = ownedKey(quality);
   return <>
@@ -108,9 +108,9 @@ export default function CollectionBreakdown({ sets, title, quality, onQuality, s
         <RarityDistribution key={title} rarities={rarities} quality={quality} />
       </section>
       <section className="cs-rarities" aria-labelledby={`${id}-rarities`}><h3 id={`${id}-rarities`}>各稀有度完成度<small>已拥有 / 可收藏种类</small></h3>
-        {rarities.map(row => <Changing as="div" className="cs-rarity-row" key={row.key} valueKey={`${quality}-${row[key]}-${row.total}`}>
+        {rarities.map(row => <Changing as="div" className="cs-rarity-row" data-rarity={row.key} key={row.key} valueKey={`${quality}-${row[key]}-${row.total}`}>
           <span title={golden && row.key === 'legendary' ? `金色 ${row.goldenOnly} 种、钻石 ${row.diamond} 种、异画 ${row.signature} 种，合并去重后 ${row.golden} 种` : undefined}>
-            <PackSymbol rarity={row.key} golden={golden} />{golden ? `金色${row.name}` : row.name}
+            <PackSymbol rarity={row.key === 'free' ? 'common' : row.key} golden={golden} />{golden ? `金色${row.name}` : row.name}
           </span><div><Meter owned={row[key]} total={row.total} color={golden ? GOLD_COLORS[row.key] : row.color} premium={mixed ? row.golden : 0} premiumColor={GOLD_COLORS[row.key]} /><small>{number(row[key])} / {number(row.total)} 种</small></div><b>{completion(row[key], row.total)}%</b>
         </Changing>)}
       </section>

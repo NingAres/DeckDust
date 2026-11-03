@@ -214,7 +214,7 @@ export default function App() {
       </div></>}
     </header>
     <div className="pack-page-host" hidden={!packPage}><Packs view={packPage ? view : 'pack-records'} cards={cards} onNavigate={setView} onNotice={setNotice} /></div>
-    {view === 'collection-stats' && <CollectionStats onShowMissing={showMissingCollection} />}
+    {view === 'collection-stats' && <CollectionStats cards={cards} loading={loading} error={error} onRetry={() => setReload(value => value + 1)} onShowMissing={showMissingCollection} />}
     {view === 'decks' && <Decks cards={cards} cardReferences={deckController.cardReferences} loading={loading} controller={deckController} onNotice={setNotice} />}
     {view === 'compare' && <CompareTools decks={deckController.decks} cards={cards} cardReferences={deckController.cardReferences} loading={loading || !deckController.ready} artMode={deckArtMode} />}
     {view === "collection" && <div id="content-grid" className={`content-grid ${building ? 'deck-mode collection-building' : 'no-deck'}`}><section id="collection-view" className="view active" aria-label="我的收藏">
@@ -232,7 +232,7 @@ export default function App() {
     </section>{building && <DeckEditor controller={deckController} cards={cards} cardReferences={deckController.cardReferences} onCard={selectDeckCard} onFinish={finishBuilding} artMode={deckArtMode} />}</div>}
     </main>
     {notice ? createPortal(<div className={`toast ${document.querySelector('dialog[open]') ? 'toast-in-modal' : ''}`} role="status">{notice}<button aria-label="关闭通知" onClick={() => setNotice('')}><Icon name="close" /></button></div>, document.querySelector('dialog[open]') || document.body) : null}
-    <span className="sr-only" role="status">{view === 'collection-stats' ? '收藏统计界面预览，正在显示示例数据' : loading ? '正在载入收藏' : `已找到 ${result.length} 个卡牌版本，第 ${currentPage + 1} 页`}</span>
+    <span className="sr-only" role="status">{view === 'collection-stats' ? '收藏统计，使用我的收藏数据' : loading ? '正在载入收藏' : `已找到 ${result.length} 个卡牌版本，第 ${currentPage + 1} 页`}</span>
     <DeckDialogs controller={deckController} cards={cards} cardReferences={deckController.cardReferences} onReferences={setCardReferences} onNotice={setNotice} artMode={deckArtMode} />
     {modal === 'card' && card ? <CardDetails card={card} preferredQuality={selectedQuality || filters.quality} onClose={closeModal} /> : null}
     {modal === 'settings' ? <SyncDialog snapshot={snapshot} onUpdated={updated} onClose={closeModal} syncPreferences={syncPreferences} onSyncPreferencesChange={updateSyncPreferences} deckArtMode={deckArtMode} onDeckArtModeChange={updateDeckArtMode} onNotice={setNotice} /> : null}
