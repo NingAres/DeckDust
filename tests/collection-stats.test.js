@@ -10,6 +10,11 @@ const collection = Object.fromEntries(slots.map((counts, i) => [String(i + 1), c
 const attached = attachCollection(catalog, collection);
 const legendary = sets => sets.find(set => set.id === 'BE').rarities.find(row => row.key === 'legendary');
 
+test('collection statistics can render before the caller supplies its catalogue', () => {
+  assert.deepEqual(buildCollectionSets(), []);
+  assert.deepEqual(buildCollectionSets(undefined), []);
+});
+
 test('27 legendary catalogue types with 9 owned identities display 9/27, matching My Collection', () => {
   const sets = buildCollectionSets(attached), row = legendary(sets);
   assert.equal(row.total, 27);

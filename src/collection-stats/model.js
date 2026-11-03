@@ -12,7 +12,7 @@ const TOTAL_KEYS = ['total', 'any', 'normal', 'golden', 'goldenOnly', 'diamond',
 
 // Input is the same unexpanded, collection-attached catalogue as My Collection.
 // Count a DBF identity once, regardless of quantities or owned finish variants.
-export function buildCollectionSets(cards) {
+export function buildCollectionSets(cards = []) {
   const sets = new Map();
   const unique = new Map(cards.filter(card => card.dbfId).map(card => [String(card.dbfId), card]));
   for (const card of unique.values()) {
