@@ -114,8 +114,23 @@ export default function SyncDialog({ snapshot, onClose, onUpdated, syncPreferenc
     headerActions={<>
       <a className="settings-header-icon" href="https://github.com/NingAres/DeckDust" target="_blank" rel="noopener noreferrer"
         aria-label="在 GitHub 上打开 Deck Dust 开源项目" data-tooltip="GitHub 开源项目"><Icon name="github" /></a>
-      <span className="settings-header-icon is-static" role="img" tabIndex={0} aria-label="作者：柠" data-tooltip="作者：柠"><Icon name="infoCircle" /></span>
-      <span className="settings-header-icon is-static" role="img" tabIndex={0} aria-label="邮箱：ning_1004@126.com" data-tooltip="ning_1004@126.com"><Icon name="mail" /></span>
+      <span className="settings-header-icon is-static settings-about-trigger" role="img" tabIndex={0}
+        aria-label={`Deck Dust 项目信息：炉石传说收藏管理、套牌构筑与开包记录工具。作者：柠。版本：${packageInfo.version}`}>
+        <Icon name="infoCircle" />
+        <span className="settings-about-tooltip" role="tooltip" aria-hidden="true">
+          <strong>Deck Dust <small>v{packageInfo.version}</small></strong>
+          <span>炉石传说收藏管理、套牌构筑与开包记录工具。</span>
+          <span className="settings-about-author"><Icon name="user" />作者：柠</span>
+        </span>
+      </span>
+      <span className="settings-header-icon is-static settings-mail-trigger" role="img" tabIndex={0}
+        aria-label="如需联系作者，请发送邮件至这个邮箱：ning_1004@126.com">
+        <Icon name="mail" />
+        <span className="settings-mail-tooltip" role="tooltip" aria-hidden="true">
+          <span>如需联系作者，请发送邮件至这个邮箱：</span>
+          <strong>ning_1004@126.com</strong>
+        </span>
+      </span>
     </>}>
     <div className="settings-sections" role="tablist" aria-label="设置类别">
       <button type="button" role="tab" aria-selected={section === 'sync'} aria-controls="settings-panel-sync" id="settings-tab-sync" tabIndex={section === 'sync' ? 0 : -1} onClick={() => setSection('sync')}>收藏同步</button>
