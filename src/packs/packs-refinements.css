@@ -175,10 +175,13 @@
 
 /* Quiet counts: previews don't add a separate visual marker. */
 .pack-quality-preview-trigger{border:0;text-decoration:none;border-radius:0;background:transparent;min-height:23px;padding:1px 4px;cursor:pointer}
+.pack-quality-preview-trigger{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='13' cy='13' r='8.5' fill='%23f4e8cc' fill-opacity='.94' stroke='%2350371e' stroke-width='2.5'/%3E%3Cpath d='m19.5 19.5 8 8' fill='none' stroke='%2350371e' stroke-width='3.5' stroke-linecap='round'/%3E%3C/svg%3E") 13 13, pointer}
 @media(hover:hover){.pack-quality-preview-trigger:hover{background:transparent;color:inherit}}
 .pack-history-table tbody td{height:44px;padding-top:4px;padding-bottom:4px}.pack-history-table .pack-record-select{min-height:34px}.pack-history-table .pack-record-select>.pack-expansion-art{height:32px;width:25px}.pack-history-table .pack-record-identity{gap:2px}.pack-history-table .pack-date-row th{height:26px;padding-block:5px}
 .pack-history-pagination{display:flex;align-items:center;gap:12px;min-height:34px;padding:6px 0 0;font-size:10px;color:#8b7049;flex:none}
 .pack-history-pagination>span{margin-right:auto}.pack-history-pagination>div{display:flex;align-items:center;gap:7px}.pack-history-pagination b{font-size:10px;font-weight:500;min-width:34px;text-align:center}.pack-history-pagination select{height:26px;border:1px solid #b59b69;border-radius:4px;background:#e9d9b5;color:#7d5d32;padding:2px 6px;font-size:10px}.pack-history-pagination .pack-scroll-button{height:25px;width:26px}
+.pack-pity .pity-count.quality-goldLegendary{color:#b95b0c}
+.pack-pity .pity-count.quality-signature{color:#157c83}
 .pack-selected{min-height:43px;padding:7px 0 3px;margin-top:5px;border-top:1px solid #b69a6555;gap:8px}
 .pack-selected>div:first-child{display:flex;align-items:center;flex-wrap:wrap;gap:3px 8px;min-width:0}.pack-selected h3{font-size:11px;margin:0}.pack-selected h3 small{font-size:9px}.pack-selected p{margin:0;font-size:9px}.pack-selected .pack-muted{font-size:9px;white-space:nowrap}.pack-selected-numbers{flex:none}.pack-selected-numbers>span{display:none}.pack-selected-numbers button{min-height:27px;padding:4px 7px}
 .pack-main-paper .pack-paper-footer{padding-top:7px}.record-card-details .pack-section-heading h3{margin:10px 0;font-size:14px}.record-card-details .pack-card-preview>span{display:flex;justify-content:center;align-items:center;gap:7px;font-size:10px;line-height:1.35}.record-card-details .pack-card-preview>span .pack-symbol{display:inline-flex;align-items:center;justify-content:center;flex:0 0 18px;width:18px;height:18px;align-self:center;margin:0}.record-card-details .pack-symbol{width:18px;height:18px}

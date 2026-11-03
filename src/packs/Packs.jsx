@@ -42,7 +42,7 @@ function PityPanel({ set, type, records, onChooseSet }) {
   return <section ref={panel} className="pack-pity"><div className="pack-section-heading"><h2>保底进度</h2></div>
     {!set ? <div className="pack-pity-empty"><Gem /><h3>先选择一个扩展包</h3><p>不同扩展包与卡包类型分别计算，全部记录没有统一保底。</p><button className="simple-button" onClick={onChooseSet}>选择扩展包</button></div> : <>
       <p className="pack-muted">{set} · {PACK_TYPES[selectedType]}</p>
-      {rows.map(({ quality, total, since }) => <div className="pity-item" key={quality}><div><span><QualitySymbol quality={quality} />{QUALITY_FIELDS.find(([key]) => key === quality)?.[1]}</span><b>{since}<small> / {total}</small></b></div>
+      {rows.map(({ quality, total, since }) => <div className="pity-item" key={quality}><div><span><QualitySymbol quality={quality} />{QUALITY_FIELDS.find(([key]) => key === quality)?.[1]}</span><b className={`pity-count quality-${quality}`}>{since}<small> / {total}</small></b></div>
         <div className={`pity-track ${quality === 'epic' ? 'epic' : ''}`} role="meter" aria-label={`${quality}保底进度`} aria-valuenow={Math.min(since, total)} aria-valuemin={0} aria-valuemax={total}><span style={{ width: `${Math.min(100, since / total * 100)}%` }} /></div>
       </div>)}
     </>}
