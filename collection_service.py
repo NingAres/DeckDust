@@ -16,6 +16,7 @@ from functools import cached_property
 from pathlib import Path
 
 from data_directory import prepare_data_directory
+from persistent_files import migrate_directory_contents
 
 RESOURCE_ROOT = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 MAX_IMPORT_BYTES = 20 * 1024 * 1024
@@ -24,10 +25,16 @@ EXCLUDED_SETS = {'HERO_SKINS', 'PLACEHOLDER_202204', 'CORE_HIDDEN', 'VANILLA'}
 HSREPLAY_SNAPSHOT_PREFIX = 'deck-dust-hsreplay-'
 
 
-def packrecord_directory(root: Path | None = None) -> Path:
-    """Return the app-local folder used for rolling HSReplay collection snapshots."""
-    base = Path(sys.executable).resolve().parent if getattr(sys, 'frozen', False) else Path(root or RESOURCE_ROOT).resolve()
-    return base / 'packrecord'
+def packrecord_directory(root: Path | None = None, data_dir: Path | None = None) -> Path:
+    """Return persistent storage for rolling HSReplay collection snapshots."""
+    if getattr(sys, 'frozen', False):
+        legacy_directory = Path(sys.executable).resolve().parent / 'packrecord'
+    else:
+        legacy_directory = Path(root or RESOURCE_ROOT).resolve() / 'packrecord'
+    directory = prepare_data_directory(data_dir) / 'packrecord'
+    directory.mkdir(parents=True, exist_ok=True)
+    migrate_directory_contents(legacy_directory, directory)
+    return directory
 
 
 def normalize_collection(raw: object) -> dict[str, list[int]]:
@@ -54,7 +61,7 @@ class CollectionStore:
     def __init__(self, root: Path = RESOURCE_ROOT, data_dir: Path | None = None):
         self.root = root
         self.data_dir = prepare_data_directory(data_dir)
-        self.snapshot_dir = packrecord_directory(root)
+        self.snapshot_dir = packrecord_directory(root, self.data_dir)
         self.db_path = self.data_dir / 'collection.sqlite3'
         self.lock = threading.RLock()
         with self.connect() as conn:
