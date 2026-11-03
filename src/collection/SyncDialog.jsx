@@ -110,7 +110,13 @@ export default function SyncDialog({ snapshot, onClose, onUpdated, syncPreferenc
       anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (error) { setError(error.message); }
   }
-  return <Modal title={<span className="settings-modal-title">应用设置 <small>v{packageInfo.version}</small></span>} onClose={onClose} className="sync-modal settings-modal">
+  return <Modal title={<span className="settings-modal-title">应用设置 <small>v{packageInfo.version}</small></span>} onClose={onClose} className="sync-modal settings-modal"
+    headerActions={<>
+      <a className="settings-header-icon" href="https://github.com/NingAres/DeckDust" target="_blank" rel="noopener noreferrer"
+        aria-label="在 GitHub 上打开 Deck Dust 开源项目" data-tooltip="GitHub 开源项目"><Icon name="github" /></a>
+      <span className="settings-header-icon is-static" role="img" tabIndex={0} aria-label="作者：柠" data-tooltip="作者：柠"><Icon name="infoCircle" /></span>
+      <span className="settings-header-icon is-static" role="img" tabIndex={0} aria-label="邮箱：ning_1004@126.com" data-tooltip="ning_1004@126.com"><Icon name="mail" /></span>
+    </>}>
     <div className="settings-sections" role="tablist" aria-label="设置类别">
       <button type="button" role="tab" aria-selected={section === 'sync'} aria-controls="settings-panel-sync" id="settings-tab-sync" tabIndex={section === 'sync' ? 0 : -1} onClick={() => setSection('sync')}>收藏同步</button>
       <button type="button" role="tab" aria-selected={section === 'packs'} aria-controls="settings-panel-packs" id="settings-tab-packs" tabIndex={section === 'packs' ? 0 : -1} onClick={() => setSection('packs')}>日志监控</button>

@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import Icon from './Icon.jsx';
 
-export default function Modal({ title, children, onClose, className = '' }) {
+export default function Modal({ title, children, onClose, className = '', headerActions = null }) {
   const ref = useRef(null);
   const animation = useRef(null);
   const closingRef = useRef(false);
@@ -35,7 +35,7 @@ export default function Modal({ title, children, onClose, className = '' }) {
     onClick={event => { if (event.target === ref.current) { const box = ref.current.getBoundingClientRect();
       if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) requestClose();
     } }}>
-    <header className="modal-head"><h2 id="dialog-title">{title}</h2><button className="icon-button" aria-label="关闭" onClick={requestClose}><Icon name="close" /></button></header>
+    <header className="modal-head"><h2 id="dialog-title">{title}</h2>{headerActions ? <div className="modal-head-actions">{headerActions}<button className="icon-button" aria-label="关闭" onClick={requestClose}><Icon name="close" /></button></div> : <button className="icon-button" aria-label="关闭" onClick={requestClose}><Icon name="close" /></button>}</header>
     {children}
   </dialog>;
 }
