@@ -6,6 +6,18 @@ import { GOLD_COLORS, ownedKey, raritySegments, RARITIES, completion, number, su
 
 export const QUALITIES = [['any', '全部品质'], ['normal', '普通卡'], ['golden', '金卡']];
 
+const EXPLANATIONS = [
+  '同一卡牌的多个品质不重复计入「全部品质」。',
+  '金色传说包含金色、钻石与异画传说，同一卡牌只计一种。',
+  '金色段优先计入，非金色段为其余已拥有种类；两段相加等于全部收藏，不重复计数。',
+];
+const DISTRIBUTION_CAPTIONS = ['已拥有种类的构成', '非金色 / 金色 · 种类去重'];
+
+function StableText({ as: Tag = 'p', text, variants }) {
+  return <Tag className="cs-stable-copy"><span>{text}</span>{variants.map(copy =>
+    <span key={copy} className="cs-copy-reserve" aria-hidden="true">{copy}</span>)}</Tag>;
+}
+
 export function QualityTabs({ quality, onQuality, showGoldSegments, onShowGoldSegments }) {
   const selected = quality === 'mixed' ? 'any' : quality;
   return <div className="cs-quality-controls"><div className="cs-quality" role="group" aria-label="统计品质">{QUALITIES.map(([key, label]) => <button key={key} aria-pressed={selected === key} onClick={() => onQuality(key)}>{label}</button>)}</div>
@@ -68,7 +80,7 @@ function RarityDistribution({ rarities, quality }) {
     </div>
     <div className="cs-legend">{rarities.map(row => <button key={row.key} aria-label={`${row.name} ${number(row[key])} 种，占 ${share(row[key])}%`} data-active={hovered === row.key}
       onPointerEnter={() => setHovered(row.key)} onPointerLeave={() => setHovered(null)} onFocus={() => setHovered(row.key)} onBlur={() => setHovered(null)} onClick={() => setHovered(row.key)}>
-      <span className="cs-dot" style={{ background: row.color }} /><span className="cs-legend-name">{quality === 'golden' ? `金色${row.name}` : row.name}{quality === 'mixed' ? <small>非金 {row.any - row.golden} · 金 {row.golden}</small> : null}</span><b>{number(row[key])}<small> 种</small></b><em>{share(row[key])}%</em>
+      <span className="cs-dot" style={{ background: row.color }} /><span className="cs-legend-name">{quality === 'golden' ? `金色${row.name}` : row.name}<small aria-hidden={quality !== 'mixed'} style={{ visibility: quality === 'mixed' ? 'visible' : 'hidden' }}>非金 {row.any - row.golden} · 金 {row.golden}</small></span><b>{number(row[key])}<small> 种</small></b><em>{share(row[key])}%</em>
     </button>)}</div>
   </Changing>;
 }
@@ -88,11 +100,11 @@ export default function CollectionBreakdown({ sets, title, quality, onQuality, s
       <Metric golden icon={<PackSymbol golden />} label="金卡收藏" owned={sum(rarities, 'golden')} total={total} note="含钻石、异画传说 · 种类去重" />
       <div className="cs-metric cs-missing"><button className="cs-metric-icon cs-missing-icon" aria-label="查看当前范围尚未拥有的卡牌" title="前往我的收藏，查看尚未拥有的卡牌" onClick={onShowMissing}><Icon name="search" /></button><div><span>尚未拥有</span><Changing as="strong" valueKey={total - any}>{number(total - any)}<small> 种</small></Changing><p>距离收齐，还差这些新面孔</p></div></div>
     </div>
-    <div className="cs-analysis-heading"><div><h2>{title}<span>收藏分布</span></h2><p>{mixed ? '金色段优先计入，非金色段为其余已拥有种类；两段相加等于全部收藏，不重复计数。' : golden ? '金色传说包含金色、钻石与异画传说，同一卡牌只计一种。' : '同一卡牌的多个品质不重复计入「全部品质」。'}</p></div>
+    <div className="cs-analysis-heading"><div><h2>{title}<span>收藏分布</span></h2><StableText text={EXPLANATIONS[mixed ? 2 : golden ? 1 : 0]} variants={EXPLANATIONS} /></div>
       <>{showQualityControl ? <QualityTabs quality={quality} onQuality={onQuality} showGoldSegments={showGoldSegments} onShowGoldSegments={onShowGoldSegments} /> : null}</>
     </div>
     <div className="cs-chart-grid">
-      <section className="cs-distribution" aria-labelledby={`${id}-distribution`}><h3 id={`${id}-distribution`}>稀有度分布<small>{mixed ? '非金色 / 金色 · 种类去重' : '已拥有种类的构成'}</small></h3>
+      <section className="cs-distribution" aria-labelledby={`${id}-distribution`}><h3 id={`${id}-distribution`}>稀有度分布<StableText as="small" text={DISTRIBUTION_CAPTIONS[mixed ? 1 : 0]} variants={DISTRIBUTION_CAPTIONS} /></h3>
         <RarityDistribution key={title} rarities={rarities} quality={quality} />
       </section>
       <section className="cs-rarities" aria-labelledby={`${id}-rarities`}><h3 id={`${id}-rarities`}>各稀有度完成度<small>已拥有 / 可收藏种类</small></h3>
