@@ -524,3 +524,15 @@
 
 @media(max-width:640px){.pending-quality-counts .pack-quality-detail{padding:14px 8px}.pending-quality-counts .pack-quality-detail>span{font-size:10px;gap:3px}.pending-quality-counts .pack-quality-detail .pack-symbol{width:20px;height:20px}.pending-quality-counts .pack-quality-detail>b{font-size:22px;padding-left:24px}.pending-quality-counts .quality-signature .pack-symbol{width:24px;height:24px}.pending-quality-counts .quality-signature>b{padding:0;font-size:27px}}
 @media(max-width:560px){.pending-pack-view-heading{gap:6px}.pending-pack-tabs{gap:1px}.pending-pack-tabs button{min-width:23px;height:24px;padding-inline:5px}.pending-pack-view-heading>time{font-size:9px;margin-left:2px}.pending-pack-view>.pack-card-line{gap:3px}.pending-pack-view>.pack-card-line .pack-card-preview>span{font-size:8px;display:block;overflow-wrap:anywhere}.pending-pack-view>.pack-card-line .pack-symbol{width:14px;height:14px}}
+/* Record actions reuse the parchment surface and existing icon language. */
+.pack-record-context-menu{position:fixed;inset:auto;margin:0;min-width:190px;padding:6px;border:1px solid #a9874e;border-radius:7px;background:linear-gradient(135deg,#f3e5c5,#e5d4ad);color:#51371d;box-shadow:0 8px 24px #21160f55,inset 0 0 0 1px #fff4ce88;animation:pack-record-menu-enter 180ms cubic-bezier(.2,.75,.25,1)}
+.pack-record-context-heading{padding:7px 10px 9px;margin-bottom:4px;border-bottom:1px solid #aa895044;font-size:12px;font-weight:700}
+.pack-record-context-heading small{display:block;margin-top:4px;color:#8a6a40;font-size:10px;font-weight:400}
+.pack-record-context-menu button{display:flex;align-items:center;gap:10px;width:100%;min-height:36px;padding:8px 10px;border:0;border-radius:4px;background:transparent;color:inherit;text-align:left;font:inherit;font-size:12px;cursor:pointer;transition:background-color 150ms ease-out}
+.pack-record-context-menu button:hover,.pack-record-context-menu button:focus-visible{background:#b89a6233;outline:none}
+.pack-record-context-menu button:focus-visible{box-shadow:inset 0 0 0 1px #9b783d}
+.pack-record-context-menu button:disabled{opacity:.4;cursor:default;background:transparent;box-shadow:none}
+.pack-record-context-menu button>svg{width:16px;height:16px;flex:none}
+.pack-record-context-menu button>svg:last-child{margin-left:auto;width:12px;height:12px;opacity:.55}
+@keyframes pack-record-menu-enter{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.pack-record-context-menu{animation:none}}

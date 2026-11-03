@@ -118,6 +118,20 @@ export default function Packs({ view, cards, onNavigate, onNotice }) {
       setChecked([]); setDialog(null); onNotice(discard ? '所选卡包已放弃。' : '卡包与单卡明细已一起保存。');
     } catch (error) { onNotice(error.message); } finally { setBusy(false); }
   }
+  function recordActions(record) {
+    const cycle = api.cycles.find(item => item.records.some(entry => entry.id === record.id));
+    const returnToCycle = dialog?.kind === 'cycle' ? dialog.cycle : undefined;
+    function navigateToRecord(view) {
+      setSet(record.set); setType(record.type); setRange('all');
+      setDialog(null); onNavigate(view);
+    }
+    return [
+      { label: '详情', icon: 'infoCircle', run: () => setDialog({ kind: 'details', record, returnToCycle }) },
+      { label: '查看所属区间', icon: 'clock', disabled: !cycle, title: cycle ? undefined : '旧记录未保留可靠的区间关联', run: () => setDialog({ kind: 'cycle', cycle }) },
+      { label: '查看分析', icon: 'chart', run: () => navigateToRecord('pack-analysis') },
+      { label: '查看总览', icon: 'collection', run: () => navigateToRecord('pack-overview') },
+    ];
+  }
   async function removeRecord() {
     setBusy(true);
     try { await api.mutate('record/delete', { id: dialog.record.id, revision: dialog.record.revision }); setDialog(null); onNotice('记录已删除，统计已同步，删除前备份已保留。'); }
@@ -138,7 +152,7 @@ export default function Packs({ view, cards, onNavigate, onNotice }) {
       <div ref={filterContentRef} className="pack-filter-content">
       {isRecords ? <><Metrics records={statsFiltered} set={set} type={type} />
         <div className="pack-section-heading"><h2>开包明细 <span>{filtered.length} 条记录</span></h2><div className="pack-history-tools"><button className="simple-button" onClick={() => setDialog({ kind: "recent" })}><Icon name="collection" />最近开包记录</button><label className="pack-source-filter"><span className="sr-only">记录来源</span><select value={source} onChange={event => transitionFilteredContent(() => setSource(event.target.value))}><option value="">全部来源</option>{[...new Set(records.map(record => record.source))].map(source => <option key={source}>{source}</option>)}</select></label></div></div>
-        <HistoryTable records={filtered} pityRecords={records} catalog={cards} active={active?.id} onSelect={setSelected} onDetails={record => setDialog({ kind: 'details', record })} fillRows animatePages />
+        <HistoryTable recordActions={recordActions} records={filtered} pityRecords={records} catalog={cards} active={active?.id} onSelect={setSelected} onDetails={record => setDialog({ kind: 'details', record })} fillRows animatePages />
         {!filtered.length ? <div className="pack-empty"><Icon name="pack" /><h3>还没有符合条件的记录</h3><p>试试其他筛选，或新增一条开包记录。</p><button className="simple-button" onClick={() => transitionFilteredContent(() => { setSet(''); setType(''); setSource(''); setRange('all'); setQuery(''); })}>重置筛选</button></div> : null}
         {active ? <SelectedRecord ref={selectedSheet} record={active} catalog={cards} onDetails={() => setDialog({ kind: 'details', record: active })} /> : null}
       </> : isAnalysis ? <PackAnalysis cycles={api.cycles.filter(cycle => (!set || cycle.set === set) && (!type || cycle.type === type))} records={records.filter(record => (!set || record.set === set) && (!type || record.type === type))} dateFrom={cutoff} dateTo={cutoff ? today : ""} onDetails={cycle => setDialog({ kind: 'cycle', cycle })} /> : <PackOverview records={statsFiltered} sort={sort} onSort={setSort} onTransition={transitionFilteredContent} />}
@@ -149,7 +163,7 @@ export default function Packs({ view, cards, onNavigate, onNotice }) {
       <button className={`pack-queue-button ${pending.length ? 'has-pending' : ''}`} onClick={() => { setChecked(pending.map(event => event.id)); setDialog({ kind: 'queue', expansionId: expansions.find(item => item.name === set && (!type || item.defaultType === type))?.id || expansions[0]?.id || '' }); }}><PackArt set="" type="normal" className="pack-queue-art" /><span>待确认卡包</span><b>{pending.length}</b><Icon name="right" /></button>
     </section><PityPanel set={set} type={type} records={records} onChooseSet={() => { setSet(setNames[0]); setType("normal"); }} />{!set ? <figure className="pack-sidebar-art" aria-hidden="true"><img src="/assets/ui-skin/pack-tavern-vignette.webp" alt="" loading="lazy" /></figure> : null}<section className="pack-sidebar-note"><h3>{isRecords ? '留住每一次惊喜' : isAnalysis ? '读懂这些数字' : '你的开包档案'}</h3><p>{isRecords ? '自动识别与手动录入汇入同一本记录。点击历史记录，可查看数量、来源和卡牌详情。' : '传说、史诗均合并各品质统计。筛选范围会同时作用于指标、图表和表格。'}</p></section></aside> : null}</div>
     {dialog?.kind === 'recent' ? <RecentPacks records={api.recentRecords.filter(record => (!set || record.set === set) && (!type || record.type === type))} cards={cards} onClose={() => setDialog(null)} /> : null}
-    {dialog?.kind === 'cycle' ? <Modal title="合并区间明细" className="pack-dialog pack-cycle-dialog" onClose={() => setDialog(null)}><div className="pack-section-heading"><h3>{dialog.cycle.set} · {PACK_TYPES[dialog.cycle.type]}</h3><span className={`cycle-state ${dialog.cycle.closed ? 'closed' : 'open'}`}>{dialog.cycle.closed ? '已结束' : '合并中'}</span></div><p className="pack-muted">{dialog.cycle.start.replace('T', ' ')} 至 {dialog.cycle.date.replace('T', ' ')} · {dialog.cycle.count} 包 · {dialog.cycle.records.length} 次录入</p><HistoryTable catalog={cards} records={dialog.cycle.records} onSelect={() => {}} fillRows animatePages rowHeight={58} onDetails={record => setDialog({ kind: 'details', record, returnToCycle: dialog.cycle })} /><div className="dialog-actions"><button className="gold-button" onClick={() => setDialog(null)}>完成</button></div></Modal> : null}
+    {dialog?.kind === 'cycle' ? <Modal title="合并区间明细" className="pack-dialog pack-cycle-dialog" onClose={() => setDialog(null)}><div className="pack-section-heading"><h3>{dialog.cycle.set} · {PACK_TYPES[dialog.cycle.type]}</h3><span className={`cycle-state ${dialog.cycle.closed ? 'closed' : 'open'}`}>{dialog.cycle.closed ? '已结束' : '合并中'}</span></div><p className="pack-muted">{dialog.cycle.start.replace('T', ' ')} 至 {dialog.cycle.date.replace('T', ' ')} · {dialog.cycle.count} 包 · {dialog.cycle.records.length} 次录入</p><HistoryTable recordActions={recordActions} catalog={cards} records={dialog.cycle.records} onSelect={() => {}} fillRows animatePages rowHeight={58} onDetails={record => setDialog({ kind: 'details', record, returnToCycle: dialog.cycle })} /><div className="dialog-actions"><button className="gold-button" onClick={() => setDialog(null)}>完成</button></div></Modal> : null}
     {dialog?.kind === 'expansions' ? <ExpansionManager expansions={expansions} records={records} onSave={saveExpansion} onClose={() => setDialog(null)} /> : null}
     {dialog?.kind === 'edit' ? <RecordForm expansions={expansions} record={dialog.record} defaultSet={set} defaultType={type} onClose={() => setDialog(dialog.returnToCycle ? { kind: 'details', record: dialog.record, returnToCycle: dialog.returnToCycle } : null)} onSave={save} /> : null}
     {dialog?.kind === 'details' ? <Modal title="开包记录详情" className="pack-dialog pack-detail-dialog" onClose={() => setDialog(dialog.returnToCycle ? { kind: 'cycle', cycle: dialog.returnToCycle } : null)}><div className="pack-detail-heading"><div className="pack-detail-identity"><PackArt set={dialog.record.set} type={dialog.record.type} assetName={dialog.record.artName} /><div><h3>{dialog.record.set}</h3><p>{dialog.record.date.replace('T', ' ')} · {PACK_TYPES[dialog.record.type]} · {dialog.record.source}</p></div></div><strong>{dialog.record.count}<small> 包</small></strong></div>
