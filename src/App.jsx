@@ -20,7 +20,7 @@ import { DECK_REFERENCE_IDS, eligibleForDeck, deckCollectionCards } from './deck
 import Packs from './packs/Packs.jsx';
 import { compareSetsByRelease } from './collection/set-order.js';
 import { readSyncPreferences, saveSyncPreferences } from './collection/syncPreferences.js';
-import Compare from './decks/Compare.jsx';
+import CompareTools from './decks/CompareTools.jsx';
 import CollectionStats from './collection-stats/CollectionStats.jsx';
 
 const EMPTY_SNAPSHOT = { collection: {}, meta: {}, hasBackup: false };
@@ -193,7 +193,7 @@ export default function App() {
       <div className="rail-spacer" /><button className="nav" onClick={() => setModal('settings')}><b><Icon name="settings" /></b><span>设置</span></button>
     </nav>
     <main className="main" ref={mainRef}><header className="top"><div className="top-title"><small>{view === 'collection-stats' ? 'COLLECTION INSIGHTS' : packPage ? { 'pack-records': 'PACK HISTORY', 'pack-analysis': 'PACK ANALYSIS', 'pack-overview': 'PACK OVERVIEW' }[view] : view === 'compare' ? 'DECK COMPARISON' : 'HEARTHSTONE COLLECTION'}</small><h1>{view === 'collection-stats' ? '收藏统计' : packPage ? packPage[1] : view === 'compare' ? '对比工具' : view === 'decks' ? '我的套牌' : className ? `${className}收藏` : '我的收藏'}</h1></div>
-      {view === 'collection-stats' ? <div className="pack-top-context"><span>我的收藏</span><b>扩展包 · 稀有度 · 卡牌品质</b></div> : packPage ? <div className="pack-top-context"><span>开包工具</span><b>记录 · 分析 · 总览</b></div> : view === 'compare' ? <div className="pack-top-context"><span>套牌分析</span><b>差异卡 · 收藏持有</b></div> : <><button className="top-progress" onClick={() => setModal('progress')} title={`已集齐 ${stats.copies.toLocaleString()} / ${stats.needed.toLocaleString()} 张构筑数量，点击查看完整收藏进度`} aria-label="查看收藏进度" disabled={loading || !!error}>
+      {view === 'collection-stats' ? <div className="pack-top-context"><span>我的收藏</span><b>扩展包 · 稀有度 · 卡牌品质</b></div> : packPage ? <div className="pack-top-context"><span>开包工具</span><b>记录 · 分析 · 总览</b></div> : view === 'compare' ? <div className="pack-top-context"><span>对比分析</span><b>卡组差异 · 开包数据</b></div> : <><button className="top-progress" onClick={() => setModal('progress')} title={`已集齐 ${stats.copies.toLocaleString()} / ${stats.needed.toLocaleString()} 张构筑数量，点击查看完整收藏进度`} aria-label="查看收藏进度" disabled={loading || !!error}>
         <span>已拥有 <b>{stats.ownedTypes.toLocaleString()}</b> / {stats.types.toLocaleString()} 种 <em>构筑 {stats.percent}%</em></span>
         <span className="progress-track"><span style={{ width: `${stats.percent}%` }} /></span>
       </button>
@@ -208,7 +208,7 @@ export default function App() {
     <div className="pack-page-host" hidden={!packPage}><Packs view={packPage ? view : 'pack-records'} cards={cards} onNavigate={setView} onNotice={setNotice} /></div>
     {view === 'collection-stats' && <CollectionStats />}
     {view === 'decks' && <Decks cards={cards} cardReferences={deckController.cardReferences} loading={loading} controller={deckController} onNotice={setNotice} />}
-    {view === 'compare' && <Compare decks={deckController.decks} cards={cards} cardReferences={deckController.cardReferences} loading={loading || !deckController.ready} artMode={deckArtMode} />}
+    {view === 'compare' && <CompareTools decks={deckController.decks} cards={cards} cardReferences={deckController.cardReferences} loading={loading || !deckController.ready} artMode={deckArtMode} />}
     {view === "collection" && <div id="content-grid" className={`content-grid ${building ? 'deck-mode collection-building' : 'no-deck'}`}><section id="collection-view" className="view active" aria-label="我的收藏">
       <div className="paper"><ClassSelector value={filters.class} onChange={updateFilters} allowedClasses={building ? [deckController.heroClass, 'NEUTRAL'] : undefined} />
         {building && <div className="deck-collection-toolbar"><span>{deckOnly ? '套牌用牌 · 未拥有优先 · 默认排序' : '全部收藏 · 点击卡牌加入套牌'}</span>
