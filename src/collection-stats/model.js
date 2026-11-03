@@ -53,9 +53,9 @@ export const ownedKey = quality => quality === 'mixed' ? 'any' : quality;
 // form the existing union rather than adding duplicate normal and gold counts.
 export function raritySegments(row, quality) {
   if (quality !== 'mixed') return [{ id: row.key, rarity: row.key, label: quality === 'golden' ? `金色${row.name}` : row.name,
-    value: row[ownedKey(quality)], color: quality === 'golden' ? GOLD_COLORS[row.key] : row.color }];
+    value: row[ownedKey(quality)], color: quality === 'golden' ? GOLD_COLORS[row.key] : row.color, premium: quality === 'golden' }];
   return [
     { id: `${row.key}-normal`, rarity: row.key, label: row.name, value: row.any - row.golden, color: row.color },
-    { id: `${row.key}-golden`, rarity: row.key, label: `金色${row.name}`, value: row.golden, color: GOLD_COLORS[row.key] },
+    { id: `${row.key}-golden`, rarity: row.key, label: `金色${row.name}`, value: row.golden, color: GOLD_COLORS[row.key], premium: true },
   ];
 }

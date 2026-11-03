@@ -4,6 +4,7 @@ import PackArt from '../packs/PackArt.jsx';
 import CollectionBreakdown, { Meter, QUALITIES } from './CollectionBreakdown.jsx';
 import CollectionSetDialog from './CollectionSetDialog.jsx';
 import Changing from './Changing.jsx';
+import CollectionColumnBar from './CollectionColumnBar.jsx';
 import { buildCollectionSets, setsForMode, ownedKey, completion, number, sum } from './model.js';
 import './collection-stats.css';
 
@@ -47,7 +48,8 @@ export default function CollectionStats({ cards, loading, error, onShowMissing, 
         <div className="cs-expansion-chart"><div className="cs-axis" aria-hidden="true"><span>100%</span><span>50%</span><span>0%</span></div><div className="cs-columns-scroll" tabIndex={0} role="region" aria-label="扩展包完成度柱状图，可横向滚动"><div className="cs-columns">
           {sortedSets.map(set => {
             const count = sum(set.rarities, key), target = sum(set.rarities, 'total'), rate = completion(count, target);
-            return <button className={`cs-column ${selected === set.id ? 'is-selected' : ''}`} key={set.id} aria-label={`${set.name}，已拥有 ${count} / ${target} 种，完成度 ${rate}%，打开收藏详情`} aria-haspopup="dialog" onClick={() => setDetailSet(set)}><span className="cs-column-plot"><Changing as="span" valueKey={`${chartQuality}-${rate}`} className={`cs-column-fill ${quality === 'golden' ? 'is-gold' : ''}`} style={{ height: `${rate}%` }}><b>{rate}%</b>{chartQuality === 'mixed' ? <i className="cs-column-premium" style={{ height: `${completion(sum(set.rarities, 'golden'), count)}%` }} /> : null}</Changing></span><span className="cs-column-label">{set.name}</span></button>;
+            const golden = sum(set.rarities, 'golden');
+            return <button className={`cs-column ${selected === set.id ? 'is-selected' : ''}`} key={set.id} aria-label={`${set.name}，已拥有 ${count} / ${target} 种，完成度 ${rate}%${chartQuality === 'mixed' ? `，其中金色 ${golden} / ${target} 种，${completion(golden, target)}%` : ''}，打开收藏详情`} aria-haspopup="dialog" onClick={() => setDetailSet(set)}><CollectionColumnBar owned={count} total={target} golden={golden} quality={chartQuality} /><span className="cs-column-label">{set.name}</span></button>;
           })}
         </div></div></div>
         <div className="cs-chart-caption"><span><i />{QUALITIES.find(([key]) => key === quality)[1]}完成度{chartQuality === 'mixed' ? <><i className="cs-gold-key" />其中金色收藏</> : null}</span><span>同一口径 · 同一比例 · 不同系列</span></div>
