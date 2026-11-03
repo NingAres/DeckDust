@@ -1,7 +1,7 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 const surfaces = root => [...(root?.children || [])].filter(element =>
-  !element.hidden && element.matches('.top, .pack-page-host, .content-grid, .decks-library'));
+  !element.hidden && element.matches('.top, .pack-page-host, .content-grid, .decks-library, .cs-workspace'));
 
 export default function useViewTransition(initialView) {
   const [view, commitView] = useState(initialView);

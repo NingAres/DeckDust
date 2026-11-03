@@ -21,12 +21,13 @@ import Packs from './packs/Packs.jsx';
 import { compareSetsByRelease } from './collection/set-order.js';
 import { readSyncPreferences, saveSyncPreferences } from './collection/syncPreferences.js';
 import Compare from './decks/Compare.jsx';
+import CollectionStats from './collection-stats/CollectionStats.jsx';
 
 const EMPTY_SNAPSHOT = { collection: {}, meta: {}, hasBackup: false };
 const PACK_PAGES = [['pack', '开包记录', 'pack-records'], ['chart', '开包分析', 'pack-analysis'], ['collection', '开包总览', 'pack-overview']];
 
 export default function App() {
-  const [view, setView, mainRef] = useViewTransition(() => ['collection', 'decks', 'compare', ...PACK_PAGES.map(([, , key]) => key)].includes(window.location.hash.slice(1)) ? window.location.hash.slice(1) : 'collection');
+  const [view, setView, mainRef] = useViewTransition(() => ['collection', 'decks', 'collection-stats', 'compare', ...PACK_PAGES.map(([, , key]) => key)].includes(window.location.hash.slice(1)) ? window.location.hash.slice(1) : 'collection');
   const [catalog, setCatalog] = useState([]);
   const [cardReferences, setCardReferences] = useState([]);
   const [snapshot, setSnapshot] = useState(EMPTY_SNAPSHOT);
@@ -184,14 +185,15 @@ export default function App() {
     <nav className="rail" aria-label="主导航"><div className="crest"><img src={brand} className="hs-brand-sigil" alt="炉石传说" /></div>
       <button className={`nav ${view === "collection" ? "active" : ""}`} aria-current={view === "collection" ? "page" : undefined} onClick={() => setView("collection")}><b><Icon name="collection" /></b><span>我的收藏</span></button>
       <button className={`nav ${view === "decks" ? "active" : ""}`} aria-current={view === "decks" ? "page" : undefined} onClick={() => setView("decks")}><b><Icon name="deck" /></b><span>我的套牌</span></button>
+      <button className={`nav ${view === 'collection-stats' ? 'active' : ''}`} aria-label="收藏统计" title="收藏统计" aria-current={view === 'collection-stats' ? 'page' : undefined} onClick={() => setView('collection-stats')}><b><Icon name="pie" /></b><span>收藏统计</span></button>
       {PACK_PAGES.map(([icon, name, key], index) => <div className="nav-entry" key={key}>{index === 0 ? <div className="rail-section-label">开包工具</div> : null}
         <button className={`nav pack-nav ${view === key ? 'active' : ''}`} aria-label={name} title={name} aria-current={view === key ? 'page' : undefined} onClick={() => setView(key)}><b><Icon name={icon} /></b><span>{name}</span></button>
       </div>)}
       <button className={`nav ${view === 'compare' ? 'active' : ''}`} onClick={() => setView('compare')}><b><Icon name="compare" /></b><span>对比工具</span></button>
       <div className="rail-spacer" /><button className="nav" onClick={() => setModal('settings')}><b><Icon name="settings" /></b><span>设置</span></button>
     </nav>
-    <main className="main" ref={mainRef}><header className="top"><div className="top-title"><small>{packPage ? { 'pack-records': 'PACK HISTORY', 'pack-analysis': 'PACK ANALYSIS', 'pack-overview': 'PACK OVERVIEW' }[view] : view === 'compare' ? 'DECK COMPARISON' : 'HEARTHSTONE COLLECTION'}</small><h1>{packPage ? packPage[1] : view === 'compare' ? '对比工具' : view === 'decks' ? '我的套牌' : className ? `${className}收藏` : '我的收藏'}</h1></div>
-      {packPage ? <div className="pack-top-context"><span>开包工具</span><b>记录 · 分析 · 总览</b></div> : view === 'compare' ? <div className="pack-top-context"><span>套牌分析</span><b>差异卡 · 收藏持有</b></div> : <><button className="top-progress" onClick={() => setModal('progress')} title={`已集齐 ${stats.copies.toLocaleString()} / ${stats.needed.toLocaleString()} 张构筑数量，点击查看完整收藏进度`} aria-label="查看收藏进度" disabled={loading || !!error}>
+    <main className="main" ref={mainRef}><header className="top"><div className="top-title"><small>{view === 'collection-stats' ? 'COLLECTION INSIGHTS' : packPage ? { 'pack-records': 'PACK HISTORY', 'pack-analysis': 'PACK ANALYSIS', 'pack-overview': 'PACK OVERVIEW' }[view] : view === 'compare' ? 'DECK COMPARISON' : 'HEARTHSTONE COLLECTION'}</small><h1>{view === 'collection-stats' ? '收藏统计' : packPage ? packPage[1] : view === 'compare' ? '对比工具' : view === 'decks' ? '我的套牌' : className ? `${className}收藏` : '我的收藏'}</h1></div>
+      {view === 'collection-stats' ? <div className="pack-top-context"><span>我的收藏</span><b>扩展包 · 稀有度 · 卡牌品质</b></div> : packPage ? <div className="pack-top-context"><span>开包工具</span><b>记录 · 分析 · 总览</b></div> : view === 'compare' ? <div className="pack-top-context"><span>套牌分析</span><b>差异卡 · 收藏持有</b></div> : <><button className="top-progress" onClick={() => setModal('progress')} title={`已集齐 ${stats.copies.toLocaleString()} / ${stats.needed.toLocaleString()} 张构筑数量，点击查看完整收藏进度`} aria-label="查看收藏进度" disabled={loading || !!error}>
         <span>已拥有 <b>{stats.ownedTypes.toLocaleString()}</b> / {stats.types.toLocaleString()} 种 <em>构筑 {stats.percent}%</em></span>
         <span className="progress-track"><span style={{ width: `${stats.percent}%` }} /></span>
       </button>
@@ -204,6 +206,7 @@ export default function App() {
       </div></>}
     </header>
     <div className="pack-page-host" hidden={!packPage}><Packs view={packPage ? view : 'pack-records'} cards={cards} onNavigate={setView} onNotice={setNotice} /></div>
+    {view === 'collection-stats' && <CollectionStats />}
     {view === 'decks' && <Decks cards={cards} cardReferences={deckController.cardReferences} loading={loading} controller={deckController} onNotice={setNotice} />}
     {view === 'compare' && <Compare decks={deckController.decks} cards={cards} cardReferences={deckController.cardReferences} loading={loading || !deckController.ready} artMode={deckArtMode} />}
     {view === "collection" && <div id="content-grid" className={`content-grid ${building ? 'deck-mode collection-building' : 'no-deck'}`}><section id="collection-view" className="view active" aria-label="我的收藏">
@@ -221,7 +224,7 @@ export default function App() {
     </section>{building && <DeckEditor controller={deckController} cards={cards} cardReferences={deckController.cardReferences} onCard={selectDeckCard} onFinish={finishBuilding} artMode={deckArtMode} />}</div>}
     </main>
     {notice ? createPortal(<div className={`toast ${document.querySelector('dialog[open]') ? 'toast-in-modal' : ''}`} role="status">{notice}<button aria-label="关闭通知" onClick={() => setNotice('')}><Icon name="close" /></button></div>, document.querySelector('dialog[open]') || document.body) : null}
-    <span className="sr-only" role="status">{loading ? '正在载入收藏' : `已找到 ${result.length} 个卡牌版本，第 ${currentPage + 1} 页`}</span>
+    <span className="sr-only" role="status">{view === 'collection-stats' ? '收藏统计界面预览，正在显示示例数据' : loading ? '正在载入收藏' : `已找到 ${result.length} 个卡牌版本，第 ${currentPage + 1} 页`}</span>
     <DeckDialogs controller={deckController} cards={cards} cardReferences={deckController.cardReferences} onReferences={setCardReferences} onNotice={setNotice} artMode={deckArtMode} />
     {modal === 'card' && card ? <CardDetails card={card} preferredQuality={selectedQuality || filters.quality} onClose={closeModal} /> : null}
     {modal === 'settings' ? <SyncDialog snapshot={snapshot} onUpdated={updated} onClose={closeModal} syncPreferences={syncPreferences} onSyncPreferencesChange={updateSyncPreferences} deckArtMode={deckArtMode} onDeckArtModeChange={updateDeckArtMode} onNotice={setNotice} /> : null}
