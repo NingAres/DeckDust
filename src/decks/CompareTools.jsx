@@ -2,10 +2,11 @@ import { useState } from 'react';
 import Compare from './Compare.jsx';
 import PackCompare from '../packs/PackCompare.jsx';
 import Icon from '../components/Icon.jsx';
+import useComparisonMotion from './useComparisonMotion.js';
 import './compare-tools.css';
 
 export default function CompareTools(props) {
-  const [tab, setTab] = useState('decks');
+  const [tab, setTab, stageRef] = useComparisonMotion('decks');
   const [packsOpened, setPacksOpened] = useState(false);
   function choose(next) { setTab(next); if (next === 'packs') setPacksOpened(true); }
   return <section className="comparison-tool-suite">
@@ -17,7 +18,9 @@ export default function CompareTools(props) {
         choose(next); document.getElementById(`compare-tab-${next}`)?.focus();
       }}><Icon name={icon}/>{label}</button>)}
     </div>
-    <div className="comparison-tool-body" id="compare-page-decks" role="tabpanel" aria-labelledby="compare-tab-decks" hidden={tab !== 'decks'}><Compare {...props}/></div>
-    {packsOpened && <div className="comparison-tool-body" id="compare-page-packs" role="tabpanel" aria-labelledby="compare-tab-packs" hidden={tab !== 'packs'}><PackCompare/></div>}
+    <div className="comparison-tool-stage" ref={stageRef}>
+      <div className="comparison-tool-body" id="compare-page-decks" role="tabpanel" aria-labelledby="compare-tab-decks" hidden={tab !== 'decks'}><Compare {...props}/></div>
+      <div className="comparison-tool-body" id="compare-page-packs" role="tabpanel" aria-labelledby="compare-tab-packs" hidden={tab !== 'packs'}>{packsOpened && <PackCompare/>}</div>
+    </div>
   </section>;
 }

@@ -1,4 +1,5 @@
 const paths = {
+  trophy: <><path d="M7 3h10v5a5 5 0 0 1-10 0V3ZM7 5H4v2a4 4 0 0 0 4 4m9-6h3v2a4 4 0 0 1-4 4M12 13v5m-4 3h8m-7-3h6v3"/></>,
   calendar: <><rect x="3.5" y="5" width="17" height="16" rx="2.2"/><path d="M7.5 3.5v4M16.5 3.5v4"/><path d="M4 10h16"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" strokeWidth="2.8"/></>,
   collection: <><rect x="3" y="5" width="13" height="15" rx="2"/><path d="m8 5 2-3 11 4-4 14-2-1M7 9h5M7 13h5M7 17h3"/></>,
   deck: <><path d="M4 7h16v13H4zM7 4h10M10 1h4M8 11h8M8 15h8"/></>,
