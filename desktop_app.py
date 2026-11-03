@@ -11,6 +11,7 @@ import webview
 from local_server import LocalServer, create_server
 from data_directory import DataDirectoryRedirected, relaunch_from_desktop
 from deck_export_directory import deck_export_directory
+from collection_service import packrecord_directory
 
 
 APP_NAME = "Deck Dust"
@@ -57,8 +58,9 @@ def serve() -> LocalServer:
 
 
 class DesktopApi:
-    def __init__(self, export_dir: Path):
+    def __init__(self, export_dir: Path, collection_dir: Path):
         self.export_dir = export_dir
+        self.collection_dir = collection_dir
         self._window = None
 
     def choose_deck_json(self):
@@ -76,6 +78,23 @@ class DesktopApi:
         if path.suffix.lower() != '.json' or path.stat().st_size > 5 * 1024 * 1024:
             raise ValueError('请选择不超过 5 MB 的套牌 JSON 文件。')
         return {'name': path.name, 'text': path.read_text(encoding='utf-8-sig')}
+
+    def choose_collection_json(self):
+        if self._window is None:
+            return None
+        self.collection_dir.mkdir(parents=True, exist_ok=True)
+        selected = self._window.create_file_dialog(
+            webview.FileDialog.OPEN,
+            directory=str(self.collection_dir),
+            allow_multiple=False,
+            file_types=('收藏 JSON 文件 (*.json)',),
+        )
+        if not selected:
+            return None
+        path = Path(selected[0])
+        if path.suffix.lower() != '.json' or path.stat().st_size > 20 * 1024 * 1024:
+            raise ValueError('请选择不超过 20 MB 的收藏 JSON 文件。')
+        return {'name': path.name, 'size': path.stat().st_size, 'text': path.read_text(encoding='utf-8-sig')}
 
 
 def _frontend_url() -> str:
@@ -110,7 +129,9 @@ def _run_application(lock) -> int:
 
     try:
         export_dir = deck_export_directory()
-        api = DesktopApi(export_dir)
+        collection_dir = packrecord_directory(ROOT)
+        collection_dir.mkdir(parents=True, exist_ok=True)
+        api = DesktopApi(export_dir, collection_dir)
         window = webview.create_window(APP_NAME, _frontend_url(), width=1520, height=910, min_size=(980, 680), js_api=api)
         api._window = window
         user_data = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / APP_NAME / "WebView"

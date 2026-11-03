@@ -7,6 +7,7 @@ import re
 import sqlite3
 import sys
 import threading
+from uuid import uuid4
 import urllib.error
 import urllib.request
 from contextlib import closing, contextmanager
@@ -20,6 +21,13 @@ RESOURCE_ROOT = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 MAX_IMPORT_BYTES = 20 * 1024 * 1024
 PLAYABLE_TYPES = {'MINION', 'SPELL', 'WEAPON', 'HERO', 'LOCATION'}
 EXCLUDED_SETS = {'HERO_SKINS', 'PLACEHOLDER_202204', 'CORE_HIDDEN', 'VANILLA'}
+HSREPLAY_SNAPSHOT_PREFIX = 'deck-dust-hsreplay-'
+
+
+def packrecord_directory(root: Path | None = None) -> Path:
+    """Return the app-local folder used for rolling HSReplay collection snapshots."""
+    base = Path(sys.executable).resolve().parent if getattr(sys, 'frozen', False) else Path(root or RESOURCE_ROOT).resolve()
+    return base / 'packrecord'
 
 
 def normalize_collection(raw: object) -> dict[str, list[int]]:
@@ -46,6 +54,7 @@ class CollectionStore:
     def __init__(self, root: Path = RESOURCE_ROOT, data_dir: Path | None = None):
         self.root = root
         self.data_dir = prepare_data_directory(data_dir)
+        self.snapshot_dir = packrecord_directory(root)
         self.db_path = self.data_dir / 'collection.sqlite3'
         self.lock = threading.RLock()
         with self.connect() as conn:
@@ -113,10 +122,10 @@ class CollectionStore:
             backup = (self.data_dir / 'collection.previous.sqlite3').exists()
         return {'collection': collection, 'meta': meta, 'hasBackup': backup}
 
-    def replace(self, raw: object, source: str):
+    def replace(self, raw: object, source: str, imported_at: str | None = None):
         collection = normalize_collection(raw)
         meta = {
-            'importedAt': datetime.now(timezone.utc).isoformat(), 'source': source[:120],
+            'importedAt': imported_at or datetime.now(timezone.utc).isoformat(), 'source': source[:120],
             'lastModified': raw.get('lastModified') if isinstance(raw.get('lastModified'), str) else None,
             'dust': raw.get('dust') if type(raw.get('dust')) is int and raw['dust'] >= 0 else None,
         }
@@ -134,6 +143,50 @@ class CollectionStore:
             conn.execute('INSERT INTO import_history(imported_at, source, card_types, snapshot) VALUES (?, ?, ?, ?)',
                          (meta['importedAt'], source[:120], len(collection), json.dumps(meta, ensure_ascii=False)))
         return self.read()
+
+    def save_hsreplay_snapshot(self, raw: object) -> str:
+        """Atomically keep the newest valid HSReplay JSON beside the app executable."""
+        collection = normalize_collection(raw)
+        saved_at = datetime.now(timezone.utc).isoformat()
+        snapshot = {'collection': collection, 'snapshotSavedAt': saved_at}
+        if isinstance(raw, dict):
+            if isinstance(raw.get('lastModified'), str):
+                snapshot['lastModified'] = raw['lastModified']
+            if type(raw.get('dust')) is int and raw['dust'] >= 0:
+                snapshot['dust'] = raw['dust']
+        self.snapshot_dir.mkdir(parents=True, exist_ok=True)
+        filename_time = datetime.now().astimezone().strftime('%Y%m%d-%H%M%S-%f')
+        target = self.snapshot_dir / f'{HSREPLAY_SNAPSHOT_PREFIX}{filename_time}.json'
+        temporary = target.with_name(target.name + f'.{uuid4().hex}.tmp')
+        try:
+            temporary.write_text(json.dumps(snapshot, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
+            temporary.replace(target)
+        finally:
+            temporary.unlink(missing_ok=True)
+        for older in self.snapshot_dir.glob(f'{HSREPLAY_SNAPSHOT_PREFIX}*.json'):
+            if older != target and older.is_file():
+                older.unlink()
+        return saved_at
+
+    def load_hsreplay_snapshot(self):
+        """Read the newest valid snapshot created by this application."""
+        try:
+            files = sorted(self.snapshot_dir.glob(f'{HSREPLAY_SNAPSHOT_PREFIX}*.json'), reverse=True)
+        except OSError:
+            return None
+        for path in files:
+            try:
+                if path.stat().st_size > MAX_IMPORT_BYTES:
+                    continue
+                raw = json.loads(path.read_text(encoding='utf-8-sig'))
+                normalize_collection(raw)
+                saved_at = raw.get('snapshotSavedAt') if isinstance(raw, dict) else None
+                if not isinstance(saved_at, str):
+                    saved_at = datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat()
+                return raw, saved_at
+            except (OSError, ValueError, UnicodeError):
+                continue
+        return None
 
     def restore(self):
         backup = self.data_dir / 'collection.previous.sqlite3'
@@ -174,5 +227,6 @@ class CollectionStore:
             raise ValueError('无法连接 HSReplay，现有收藏已保留，请稍后重试。') from None
         except (ValueError, UnicodeError):
             raise ValueError('HSReplay 没有返回有效的收藏 JSON，现有收藏已保留。') from None
+        self.save_hsreplay_snapshot(raw)
         return self.replace(raw, 'HSReplay 同步')
 

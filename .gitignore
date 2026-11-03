@@ -8,6 +8,7 @@ dist/
 
 # Local user data, exports, account sessions, and backup material
 data/
+packrecord/
 collection_export*.json
 collection_detail.json
 hearthstone_collection.db

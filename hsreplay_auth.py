@@ -153,7 +153,23 @@ class HSReplayAuth:
         if session:
             status.update({key: session[key] for key in ('accountName', 'expiresAt') if session.get(key)})
             status.setdefault('region', session.get('region'))
+        status['hasCollectionSnapshot'] = self.store.load_hsreplay_snapshot() is not None
         return status
+
+    def _use_collection_snapshot(self, session, reason):
+        snapshot = self.store.load_hsreplay_snapshot()
+        if snapshot is None:
+            return None
+        raw, saved_at = snapshot
+        result = self.store.replace(raw, 'HSReplay 离线快照', imported_at=saved_at)
+        message = f'{reason} 已载入本地最近一次 HSReplay 收藏快照。'
+        state = self.vault.read_status()
+        phase = 'expired' if state.get('phase') == 'expired' else 'connected'
+        self.vault.write_status(phase, message, region=5,
+                                accountName=session.get('accountName', ''),
+                                expiresAt=session.get('expiresAt'), lastSyncedAt=saved_at)
+        result['syncFallback'] = {'savedAt': saved_at, 'reason': reason}
+        return result
 
     def begin(self):
         with self.lock:
@@ -205,6 +221,9 @@ class HSReplayAuth:
                     self.vault.write_status('expired', message, region=5,
                                             accountName=session.get('accountName', ''),
                                             expiresAt=session['expiresAt'])
+                    fallback = self._use_collection_snapshot(session, message)
+                    if fallback is not None:
+                        return fallback
                     raise ValueError(message)
             try:
                 result = self.store.sync_hsreplay(session['account'], session['region'], session['cookie'], session.get('userAgent'))
@@ -213,6 +232,9 @@ class HSReplayAuth:
                     self.vault.write_status('expired', '登录已过期，请重新登录 HSReplay。', region=5,
                                             accountName=session.get('accountName', ''),
                                             expiresAt=session.get('expiresAt'))
+                fallback = self._use_collection_snapshot(session, str(error))
+                if fallback is not None:
+                    return fallback
                 raise
             self.vault.write_status('connected', '收藏已同步。', region=session['region'],
                                     accountName=session.get('accountName', ''),

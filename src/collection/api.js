@@ -7,6 +7,19 @@ export async function request(path, body, signal) {
   return data;
 }
 
+export function syncResultMessage(result, successMessage) {
+  if (!result?.syncFallback) return successMessage;
+  const date = new Date(result.syncFallback.savedAt);
+  const savedAt = Number.isNaN(date.getTime()) ? '' : `（快照时间：${date.toLocaleString('zh-CN')}）`;
+  return `HSReplay 同步失败，已自动载入本地收藏快照${savedAt}。`;
+}
+
+export async function chooseCollectionJson() {
+  const picker = window.pywebview?.api?.choose_collection_json;
+  if (typeof picker !== 'function') return { available: false, file: null };
+  return { available: true, file: await picker() };
+}
+
 export async function saveDeckExport(name, blob) {
   const response = await fetch(`/api/deck-exports?name=${encodeURIComponent(name)}`, {
     method: 'POST', headers: { 'Content-Type': blob.type }, body: blob,

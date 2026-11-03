@@ -8,7 +8,7 @@ import CardDetails from './collection/CardDetails.jsx';
 import SyncDialog from './collection/SyncDialog.jsx';
 import ProgressDialog from './collection/ProgressDialog.jsx';
 import MoreFilters from './collection/MoreFilters.jsx';
-import { request } from './collection/api.js';
+import { request, syncResultMessage, chooseCollectionJson } from './collection/api.js';
 import { attachCollection, expandQualityCards, scopeCards, filterAndSort, progress, CLASSES, DEFAULT_FILTERS, PREFERENCE_KEY, loadFilters, SET_NAMES, validateImport } from './collection/model.js';
 const brand = '/assets/ui-skin/hearthstone-crest.png';
 import Decks from './decks/Decks.jsx';
@@ -82,13 +82,15 @@ export default function App() {
       let acquired = false;
       try {
         const auth = await request('hsreplay/status');
-        if (auth.phase !== 'connected' || syncInFlight.current) return;
+        const canRestoreExpired = auth.phase === 'expired' && auth.hasCollectionSnapshot;
+        if ((auth.phase !== 'connected' && !canRestoreExpired) || syncInFlight.current) return;
         syncInFlight.current = true;
         acquired = true;
         setSyncBusy(true);
         const latest = await request('collection/sync', {});
         setSnapshot(latest);
-        setNotice('已在启动时同步 HSReplay 收藏。');
+        setNotice(syncResultMessage(latest, '已在启动时同步 HSReplay 收藏。'));
+        if (latest.syncFallback && canRestoreExpired) setModal('settings');
       } catch (error) {
         setNotice(error.message);
       } finally {
@@ -142,7 +144,7 @@ export default function App() {
   async function syncDefault() {
     if (syncBusy || syncInFlight.current) return;
     if (syncPreferences.defaultMethod === 'file') {
-      mainSyncFile.current?.click();
+      void openMainCollectionPicker();
       return;
     }
     syncInFlight.current = true;
@@ -150,32 +152,56 @@ export default function App() {
     try {
       const auth = await request('hsreplay/status');
       if (auth.phase !== 'connected') {
+        if (auth.phase === 'expired' && auth.hasCollectionSnapshot) {
+          const latest = await request('collection/sync', {});
+          setSnapshot(latest);
+          setNotice(syncResultMessage(latest, '已载入 HSReplay 收藏快照。'));
+        }
         setModal('settings');
-        setNotice('请先在设置的“收藏同步”中连接 HSReplay 国服账号。');
+        if (auth.phase !== 'expired' || !auth.hasCollectionSnapshot) setNotice('请先在设置的“收藏同步”中连接 HSReplay 国服账号。');
         return;
       }
       const result = await request('collection/sync', {});
-      updated(result, 'HSReplay 收藏已同步。');
+      updated(result, syncResultMessage(result, 'HSReplay 收藏已同步。'));
     } catch (error) {
       setNotice(error.message);
       if (/登录|会话|账号地区/.test(error.message)) setModal('settings');
     } finally { syncInFlight.current = false; setSyncBusy(false); }
   }
-  async function importMainSyncFile(event) {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file || syncBusy || syncInFlight.current) return;
-    syncInFlight.current = true;
-    setSyncBusy(true);
+  async function importMainSyncContent(name, text, size, lockHeld = false) {
+    if (!lockHeld && (syncBusy || syncInFlight.current)) return;
+    if (!lockHeld) { syncInFlight.current = true; setSyncBusy(true); }
     try {
-      if (file.size > 20 * 1024 * 1024) throw new Error('文件超过 20 MB，请选择 HDT 导出的收藏 JSON。');
-      const raw = JSON.parse((await file.text()).replace(/^\uFEFF/, ''));
+      if (size > 20 * 1024 * 1024) throw new Error('文件超过 20 MB，请选择 HDT 导出的收藏 JSON。');
+      const raw = JSON.parse(text.replace(/^\uFEFF/, ''));
       validateImport(raw);
-      const result = await request('collection/import', { data: raw, source: file.name });
+      const result = await request('collection/import', { data: raw, source: name });
       updated(result, '收藏文件已导入，进度已更新。');
     } catch (error) {
       setNotice(error instanceof SyntaxError ? '无法解析 JSON，请检查文件是否是有效的收藏导出文件。' : error.message);
-    } finally { syncInFlight.current = false; setSyncBusy(false); }
+    } finally {
+      if (!lockHeld) { syncInFlight.current = false; setSyncBusy(false); }
+    }
+  }
+  async function importMainSyncFile(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    try { await importMainSyncContent(file.name, await file.text(), file.size); }
+    catch (error) { setNotice(error.message || '无法读取所选收藏文件。'); }
+  }
+  async function openMainCollectionPicker() {
+    if (syncBusy || syncInFlight.current) return;
+    let selected;
+    try { selected = await chooseCollectionJson(); }
+    catch (error) { setNotice(error.message || '无法打开收藏文件。'); return; }
+    if (!selected.available) { mainSyncFile.current?.click(); return; }
+    if (!selected.file) return;
+    syncInFlight.current = true;
+    setSyncBusy(true);
+    await importMainSyncContent(selected.file.name, selected.file.text, selected.file.size, true);
+    syncInFlight.current = false;
+    setSyncBusy(false);
   }
   useEffect(() => {
     function keydown(event) {

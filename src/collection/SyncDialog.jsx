@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import packageInfo from '../../package.json';
 import Modal from '../components/Modal.jsx';
 import Icon from '../components/Icon.jsx';
-import { request } from './api.js';
+import { request, syncResultMessage, chooseCollectionJson } from './api.js';
 import { validateImport } from './model.js';
 import LogSettings from '../packs/LogSettings.jsx';
 
@@ -16,6 +16,7 @@ export default function SyncDialog({ snapshot, onClose, onUpdated, syncPreferenc
   const [packSettings, setPackSettings] = useState(null);
   const [confirmRestore, setConfirmRestore] = useState(false);
   const fileSequence = useRef(0);
+  const collectionFileInput = useRef(null);
   const expiresAt = auth.expiresAt ? new Date(auth.expiresAt) : null;
   const validExpiry = expiresAt && !Number.isNaN(expiresAt.getTime());
   const expiryLabel = validExpiry
@@ -72,25 +73,38 @@ export default function SyncDialog({ snapshot, onClose, onUpdated, syncPreferenc
     catch (error) { setError(error.message); }
     finally { setBusy(''); }
   }
-  async function chooseFile(event) {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  async function readCollectionFile(name, text, size) {
     const sequence = ++fileSequence.current;
     setError(''); setCandidate(null);
     try {
-      if (file.size > 20 * 1024 * 1024) throw new Error('文件超过 20 MB，请选择 HDT 导出的收藏 JSON。');
-      const raw = JSON.parse((await file.text()).replace(/^\uFEFF/, ''));
+      if (size > 20 * 1024 * 1024) throw new Error('文件超过 20 MB，请选择 HDT 导出的收藏 JSON。');
+      const raw = JSON.parse(text.replace(/^\uFEFF/, ''));
       const stats = validateImport(raw);
-      if (sequence === fileSequence.current) setCandidate({ raw, stats, name: file.name });
+      if (sequence === fileSequence.current) setCandidate({ raw, stats, name });
     } catch (error) { if (sequence === fileSequence.current) setError(error instanceof SyntaxError ? '无法解析 JSON，请检查文件是否是有效的收藏导出文件。' : error.message); }
+  }
+  async function chooseFile(event) {
+    const file = event.target.files?.[0];
     event.target.value = '';
+    if (!file) return;
+    try { await readCollectionFile(file.name, await file.text(), file.size); }
+    catch (error) { setError(error.message || '无法读取所选 JSON 文件。'); }
+  }
+  async function openCollectionPicker() {
+    if (busy) return;
+    setError('');
+    try {
+      const selected = await chooseCollectionJson();
+      if (!selected.available) { collectionFileInput.current?.click(); return; }
+      if (selected.file) await readCollectionFile(selected.file.name, selected.file.text, selected.file.size);
+    } catch (error) { setError(error.message || '无法打开收藏文件。'); }
   }
   async function run(action, body, message) {
     if (busy) return;
     setBusy(action); setError('');
     try {
       const result = await request(`collection/${action}`, body);
-      onUpdated(result, message);
+      onUpdated(result, action === 'sync' ? syncResultMessage(result, message) : message);
       onClose();
     } catch (error) {
       setError(error.message);
@@ -163,7 +177,7 @@ export default function SyncDialog({ snapshot, onClose, onUpdated, syncPreferenc
     <div key={tab} role="tabpanel" id={`sync-panel-${tab}`} aria-labelledby={`sync-tab-${tab}`} className="sync-panel settings-tab-panel">
       {tab === 'file' ? <>
         <p>选择从 HDT / HSReplay 导出的收藏 JSON，预览后更新你的收藏。</p>
-        <label className="file-picker"><span>选择收藏 JSON 文件</span><input type="file" accept=".json,application/json" aria-label="选择收藏 JSON 文件" disabled={!!busy} onChange={chooseFile} /></label>
+        <button type="button" className="file-picker" disabled={!!busy} onClick={openCollectionPicker}>选择收藏 JSON 文件</button><input ref={collectionFileInput} type="file" accept=".json,application/json" aria-label="选择收藏 JSON 文件" hidden disabled={!!busy} onChange={chooseFile} />
         {candidate ? <div className="import-preview"><strong>{candidate.name}</strong>
           <dl><div><dt>有效记录</dt><dd>{candidate.stats.types.toLocaleString()} 种</dd></div><div><dt>已拥有记录</dt><dd>{candidate.stats.ownedTypes.toLocaleString()} 种</dd></div><div><dt>合计持有</dt><dd>{candidate.stats.copies.toLocaleString()} 张</dd></div></dl>
           <small>以上为导出文件全部记录；收藏页面只统计可构筑卡牌。</small>
