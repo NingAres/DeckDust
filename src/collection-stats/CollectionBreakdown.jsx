@@ -27,7 +27,7 @@ export function QualityTabs({ quality, onQuality, showGoldSegments, onShowGoldSe
 
 export function Meter({ owned, total, color, premium = 0, premiumColor }) {
   return <span className="cs-meter" aria-hidden="true"><span style={{ width: `${completion(owned, total)}%`, background: color }}>
-    {premium > 0 ? <i className="cs-meter-premium" style={{ width: `${completion(premium, owned)}%`, background: premiumColor || '#d3a24b' }} /> : null}
+    {premium > 0 ? <i className="cs-meter-premium" style={{ width: `${completion(premium, owned)}%`, background: premiumColor || 'rgba(255,210,31,1)' }} /> : null}
   </span></span>;
 }
 
