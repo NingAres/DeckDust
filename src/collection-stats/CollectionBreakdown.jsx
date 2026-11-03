@@ -69,9 +69,6 @@ function RarityDistribution({ rarities, quality }) {
               pointerEvents="none">
               <title>{part.label}：{number(part.value)} 种，占 {share(part.value)}%</title>
             </circle>
-            {part.premium ? <circle className="cs-donut-premium-edge" cx="90" cy="90" r={radius + 10.25} fill="none" stroke="#ebc44f" strokeWidth="1.5"
-              strokeDasharray={`${painted * (radius + 10.25) / radius} ${(circumference - painted) * (radius + 10.25) / radius}`}
-              strokeDashoffset={-(start + gap / 2) * (radius + 10.25) / radius} transform="rotate(-90 90 90)" pointerEvents="none" /> : null}
           </g><circle className="cs-donut-hit" data-hit={part.id} cx="90" cy="90" r={radius} fill="none" stroke="transparent" strokeWidth="28"
             strokeDasharray={`${dash} ${circumference - dash}`} strokeDashoffset={-start} transform="rotate(-90 90 90)" pointerEvents="stroke"
             onPointerEnter={() => setHovered(part.id)} onPointerLeave={() => setHovered(null)} />
