@@ -17,6 +17,21 @@ test('missing thresholds combine four qualities unless one quality is selected',
   assert.equal(progress(cards, 'golden').copies, 1);
 });
 
+test('missing collection drilldown respects all, single expansion and rotated set scopes across qualities', () => {
+  const cards = attachCollection([
+    { dbfId: 1, id: 'NEW', name: '新系列缺卡', set: 'BE', rarity: 'COMMON' },
+    { dbfId: 2, id: 'OLD', name: '旧系列缺卡', set: 'NAXX', rarity: 'COMMON' },
+    { dbfId: 3, id: 'OWN', name: '异画已拥有', set: 'BE', rarity: 'LEGENDARY' },
+    { dbfId: 4, id: 'EVENT', name: '活动缺卡', set: 'EVENT', rarity: 'COMMON' },
+  ], { '3': [0, 0, 0, 1] });
+  const missing = set => filterAndSort(scopeCards(cards, { ...DEFAULT_FILTERS, set }),
+    { ...DEFAULT_FILTERS, set, ownership: 'missing', threshold: '1' }).map(card => card.dbfId).sort();
+  assert.deepEqual(missing(''), [1, 2, 4]);
+  assert.deepEqual(missing('BE'), [1]);
+  assert.deepEqual(missing('@standard'), [1]);
+  assert.deepEqual(missing('@wild'), [1, 2]);
+});
+
 test('card art prefers the highest owned quality, including diamond ETC', () => {
   assert.equal(bestQuality({ counts: [1, 1, 1, 0, 0, 0, 0, 0] }), 'diamond');
   assert.equal(bestQuality({ counts: [2, 2, 0, 1] }), 'signature');

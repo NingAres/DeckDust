@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SET_NAMES } from '../src/collection/model.js';
 import { SET_RELEASE_ORDER } from '../src/collection/set-order.js';
-import { DEMO_SETS, premiumLegendaryTypes, setsForMode } from '../src/collection-stats/demo.js';
+import { DEMO_SETS, ownedKey, premiumLegendaryTypes, raritySegments, setsForMode } from '../src/collection-stats/demo.js';
 
 test('statistics include the complete project set registry in release order', () => {
   assert.deepEqual(DEMO_SETS.map(set => set.id), SET_RELEASE_ORDER.filter(id => SET_NAMES[id]));
@@ -32,5 +32,18 @@ test('premium legendary types merge golden, diamond and signature identities wit
     assert.equal(legendary.golden, legendary.goldenOnly + 2);
     assert.ok(legendary.golden <= legendary.any);
     for (const row of set.rarities) assert.ok(row.golden <= row.total);
+  }
+});
+
+test('mixed chart segments partition owned types with gold precedence, preserving the union denominator', () => {
+  assert.equal(ownedKey('mixed'), 'any');
+  const row = { key: 'legendary', name: '传说', color: '#ba792a', any: 30, normal: 28, golden: 10 };
+  assert.deepEqual(raritySegments(row, 'mixed').map(part => part.value), [20, 10]);
+  assert.equal(raritySegments(row, 'any')[0].value, 30);
+  assert.equal(raritySegments(row, 'golden')[0].value, 10);
+  for (const set of DEMO_SETS) for (const rarity of set.rarities) {
+    const parts = raritySegments(rarity, 'mixed');
+    assert.equal(parts.reduce((n, part) => n + part.value, 0), rarity.any);
+    assert.ok(parts.every(part => part.value >= 0));
   }
 });

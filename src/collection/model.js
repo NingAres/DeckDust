@@ -1,3 +1,5 @@
+import { matchesSetScope } from './set-order.js';
+
 export const CLASSES = [
   ['WARRIOR', '战士', 'Warrior'],
   ['DRUID', '德鲁伊', 'Druid'], ['HUNTER', '猎人', 'Hunter'], ['ROGUE', '潜行者', 'Rogue'], ['MAGE', '法师', 'Mage'],
@@ -57,7 +59,7 @@ export function scopeCards(cards, filters) {
   const terms = filters.query.toLocaleLowerCase('zh-CN').trim().split(/\s+/).filter(Boolean);
   return cards.filter(card =>
     (!filters.class || (card.classes || [card.cardClass]).includes(filters.class)) &&
-    (!filters.set || card.set === filters.set) && (!filters.rarity || card.rarity === filters.rarity) &&
+    matchesSetScope(card.set, filters.set) && (!filters.rarity || card.rarity === filters.rarity) &&
     (!filters.type || card.type === filters.type) &&
     (!filters.mana || (filters.mana === '7+' ? (card.cost || 0) >= 7 : (card.cost || 0) === Number(filters.mana))) &&
     terms.every(term => card.searchText.includes(term)));

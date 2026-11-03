@@ -1,13 +1,10 @@
 // Illustrative UI fixtures only. Never merge these counts into user collection data.
 import { SET_NAMES } from '../collection/model.js';
-import { SET_RELEASE_ORDER } from '../collection/set-order.js';
+import { SET_RELEASE_ORDER, STANDARD_SET_IDS } from '../collection/set-order.js';
+export { STANDARD_SET_IDS } from '../collection/set-order.js';
 
 // Current catalogue rotation: 2025 + 2026 releases and Core. Wild includes
 // Standard expansions too; it is not the complement of the Standard pool.
-export const STANDARD_SET_IDS = new Set([
-  'CORE', 'EMERALD_DREAM', 'THE_LOST_CITY', 'TIME_TRAVEL',
-  'CATACLYSM', 'ESCAPEFROM_VIOLET_HOLD', 'BE',
-]);
 export const RARITIES = [
   { key: 'common', name: '普通', color: '#807b69' },
   { key: 'rare', name: '稀有', color: '#397da1' },
@@ -42,3 +39,17 @@ export const setsForMode = mode => DEMO_SETS.filter(set =>
 export const sum = (rows, key) => rows.reduce((value, row) => value + row[key], 0);
 export const completion = (owned, total) => total ? Math.round(owned / total * 1000) / 10 : 0;
 export const number = value => value.toLocaleString('zh-CN');
+
+export const GOLD_COLORS = { common: '#baa04d', rare: '#61a3af', epic: '#b47fba', legendary: '#e2ad40' };
+export const ownedKey = quality => quality === 'mixed' ? 'any' : quality;
+
+// Gold takes precedence when a type has both versions. The two visual pieces
+// form the existing union rather than adding duplicate normal and gold counts.
+export function raritySegments(row, quality) {
+  if (quality !== 'mixed') return [{ id: row.key, rarity: row.key, label: quality === 'golden' ? `金色${row.name}` : row.name,
+    value: row[ownedKey(quality)], color: quality === 'golden' ? GOLD_COLORS[row.key] : row.color }];
+  return [
+    { id: `${row.key}-normal`, rarity: row.key, label: row.name, value: row.any - row.golden, color: row.color },
+    { id: `${row.key}-golden`, rarity: row.key, label: `金色${row.name}`, value: row.golden, color: GOLD_COLORS[row.key] },
+  ];
+}

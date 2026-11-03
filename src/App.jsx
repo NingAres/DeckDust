@@ -125,6 +125,14 @@ export default function App() {
   const visible = result.slice(currentPage * 10, currentPage * 10 + 10);
   const nextPageCards = useMemo(() => result.slice((currentPage + 1) * 10, (currentPage + 2) * 10), [result, currentPage]);
   const updateFilters = useCallback(change => { setFilters(previous => ({ ...previous, ...change })); setPage(0); }, []);
+  const showMissingCollection = useCallback(set => {
+    setBuildingActive(false);
+    filtersBeforeBuild.current = null;
+    setFilters({ ...DEFAULT_FILTERS, set, ownership: 'missing', threshold: '1' });
+    setPage(0);
+    setModal(null);
+    setView('collection');
+  }, [setView]);
   const selectCard = useCallback(card => { setSelectedCard(card.dbfId); setSelectedQuality(card.displayQuality || ''); setModal('card'); }, []);
   const selectDeckCard = selectCard;
   const closeModal = useCallback(() => setModal(null), []);
@@ -206,7 +214,7 @@ export default function App() {
       </div></>}
     </header>
     <div className="pack-page-host" hidden={!packPage}><Packs view={packPage ? view : 'pack-records'} cards={cards} onNavigate={setView} onNotice={setNotice} /></div>
-    {view === 'collection-stats' && <CollectionStats />}
+    {view === 'collection-stats' && <CollectionStats onShowMissing={showMissingCollection} />}
     {view === 'decks' && <Decks cards={cards} cardReferences={deckController.cardReferences} loading={loading} controller={deckController} onNotice={setNotice} />}
     {view === 'compare' && <CompareTools decks={deckController.decks} cards={cards} cardReferences={deckController.cardReferences} loading={loading || !deckController.ready} artMode={deckArtMode} />}
     {view === "collection" && <div id="content-grid" className={`content-grid ${building ? 'deck-mode collection-building' : 'no-deck'}`}><section id="collection-view" className="view active" aria-label="我的收藏">

@@ -9,6 +9,16 @@ export const SET_RELEASE_ORDER = [
   'GVG', 'NAXX', 'EXPERT1', 'CORE', 'LEGACY', 'EVENT',
 ];
 const positions = new Map(SET_RELEASE_ORDER.map((set, index) => [set, index]));
+export const STANDARD_SET_IDS = new Set([
+  'CORE', 'EMERALD_DREAM', 'THE_LOST_CITY', 'TIME_TRAVEL',
+  'CATACLYSM', 'ESCAPEFROM_VIOLET_HOLD', 'BE',
+]);
+export function matchesSetScope(set, scope) {
+  if (!scope) return true;
+  if (scope === '@standard') return STANDARD_SET_IDS.has(set);
+  if (scope === '@wild') return SET_RELEASE_ORDER.includes(set) && set !== 'EVENT';
+  return set === scope;
+}
 export function compareSetsByRelease(a, b) {
   return (positions.get(a) ?? Infinity) - (positions.get(b) ?? Infinity) || a.localeCompare(b);
 }
