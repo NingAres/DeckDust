@@ -175,7 +175,7 @@
 
 /* Quiet counts: previews don't add a separate visual marker. */
 .pack-quality-preview-trigger{border:0;text-decoration:none;border-radius:0;background:transparent;min-height:23px;padding:1px 4px;cursor:pointer}
-.pack-quality-preview-trigger{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='13' cy='13' r='8.5' fill='%23f4e8cc' fill-opacity='.94' stroke='%2350371e' stroke-width='2.5'/%3E%3Cpath d='m19.5 19.5 8 8' fill='none' stroke='%2350371e' stroke-width='3.5' stroke-linecap='round'/%3E%3C/svg%3E") 13 13, pointer}
+.pack-quality-preview-trigger{cursor:url("/assets/app-icons/pack-preview-cursor.svg") 8 8, pointer}
 @media(hover:hover){.pack-quality-preview-trigger:hover{background:transparent;color:inherit}}
 .pack-history-table tbody td{height:44px;padding-top:4px;padding-bottom:4px}.pack-history-table .pack-record-select{min-height:34px}.pack-history-table .pack-record-select>.pack-expansion-art{height:32px;width:25px}.pack-history-table .pack-record-identity{gap:2px}.pack-history-table .pack-date-row th{height:26px;padding-block:5px}
 .pack-history-pagination{display:flex;align-items:center;gap:12px;min-height:34px;padding:6px 0 0;font-size:10px;color:#8b7049;flex:none}
@@ -539,3 +539,5 @@
 .pack-record-context-menu button>svg:last-child{margin-left:auto;width:12px;height:12px;opacity:.55}
 @keyframes pack-record-menu-enter{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.pack-record-context-menu{animation:none}}
+
+.pack-actions .pack-add-icon{font-size:18px;font-weight:750;line-height:1}

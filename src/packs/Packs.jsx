@@ -140,7 +140,7 @@ export default function Packs({ view, cards, onNavigate, onNotice }) {
   return <section className="packs-workspace" aria-label={isRecords ? '开包记录' : isAnalysis ? '开包分析' : '开包总览'}>
     {isRecords ? <div className="pack-page-toolbar"><div className="pack-page-intro"><p>每一次开包，都有迹可循。</p></div>
       <div className="pack-actions"><button className="simple-button" onClick={() => setDialog({ kind: 'expansions' })}><Icon name="settings" />扩展包管理</button><button className={`simple-button ${monitor ? 'monitor-on' : ''}`} disabled={busy} onClick={toggleMonitor}><span className="monitor-dot" />{monitor ? '监控中' : '日志监控'}</button>
-        <button className="gold-button" disabled={api.loading || !expansions.length} title={!expansions.length ? "请先添加扩展包" : undefined} onClick={() => setDialog({ kind: 'edit' })}>＋ 新增记录</button></div>
+        <button className="gold-button" disabled={api.loading || !expansions.length} title={!expansions.length ? "请先添加扩展包" : undefined} onClick={() => setDialog({ kind: 'edit' })}><span className="pack-add-icon" aria-hidden="true">＋</span>新增记录</button></div>
     </div> : null}
     {api.error ? <div className="pack-api-error" role="alert">{api.error}<button onClick={() => api.refresh().catch(() => {})}>重新加载</button></div> : null}
     <div className={`pack-layout ${isRecords ? '' : 'pack-layout-wide'}`}><div className="paper pack-main-paper">

@@ -10,3 +10,7 @@ Hearthstone brand. Hearthstone belongs to Blizzard Entertainment.
 
 `DeckDust.spec` embeds this icon into the Windows executable. Desktop shortcuts
 use the same icon from the packaged `web-dist/assets/app-icons/` directory.
+
+`pack-preview-cursor.svg` is the project-authored magnifier previously embedded
+in pack preview CSS, resized to a 20-pixel cursor. No external artwork or
+third-party license is involved.
