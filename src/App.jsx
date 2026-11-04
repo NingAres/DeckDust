@@ -1,6 +1,7 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Icon from './components/Icon.jsx';
+import UnavailableState from './components/UnavailableState.jsx';
 import useViewTransition from './useViewTransition.js';
 import CollectionGrid from './collection/CollectionGrid.jsx';
 import Filters, { ClassSelector } from './collection/Filters.jsx';
@@ -241,13 +242,13 @@ export default function App() {
     </header>
     <div className="pack-page-host" hidden={!packPage}><Packs view={packPage ? view : 'pack-records'} cards={cards} onNavigate={setView} onNotice={setNotice} /></div>
     {view === 'collection-stats' && <CollectionStats cards={cards} loading={loading} error={error} onRetry={() => setReload(value => value + 1)} onShowMissing={showMissingCollection} />}
-    {view === 'decks' && <Decks cards={cards} cardReferences={deckController.cardReferences} loading={loading} controller={deckController} onNotice={setNotice} />}
+    {view === 'decks' && <Decks cards={cards} cardReferences={deckController.cardReferences} loading={loading} collectionError={error} onRetryCollection={() => setReload(value => value + 1)} controller={deckController} onNotice={setNotice} />}
     {view === 'compare' && <CompareTools decks={deckController.decks} cards={cards} cardReferences={deckController.cardReferences} loading={loading || !deckController.ready} artMode={deckArtMode} />}
     {view === "collection" && <div id="content-grid" className={`content-grid ${building ? 'deck-mode collection-building' : 'no-deck'}`}><section id="collection-view" className="view active" aria-label="我的收藏">
       <div className="paper"><ClassSelector value={filters.class} onChange={updateFilters} allowedClasses={building ? [deckController.heroClass, 'NEUTRAL'] : undefined} />
         {building && <div className="deck-collection-toolbar"><span>{deckOnly ? '套牌用牌 · 未拥有优先 · 默认排序' : '全部收藏 · 点击卡牌加入套牌'}</span>
           <button className="simple-button" onClick={() => { deckController.setDeckOnly(!deckOnly); updateFilters({ ...DEFAULT_FILTERS }); }}>{deckOnly ? '浏览全部收藏' : '只看套牌用牌'}</button></div>}
-        {error ? <div className="empty-state" role="alert"><h2>收藏暂时无法载入</h2><p>{error}</p><button className="gold-button" onClick={() => setReload(value => value + 1)}>重新加载</button></div> :
+        {error ? <UnavailableState title="收藏暂时无法载入" message={error} onRetry={() => setReload(value => value + 1)} /> :
           <CollectionGrid cards={visible} nextPageCards={nextPageCards} quality={filters.quality} page={currentPage} total={result.length} filterKey={JSON.stringify({ ...filters, query, deckOnly,
             cards: visible.map(card => [card.dbfId, card.displayQuality || '', ...(card.counts || []), card.deckCount || 0, card.deckMissing || 0]),
             draft: building ? deckController.draft.entries.map(({ id, count, variants }) => [id, count, variants]) : null })} onPage={setPage} onSelect={building && !deckOnly ? deckController.addCard : selectCard}

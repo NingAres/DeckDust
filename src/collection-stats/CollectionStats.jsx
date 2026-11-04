@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import Icon from '../components/Icon.jsx';
+import UnavailableState from '../components/UnavailableState.jsx';
 import PackArt from '../packs/PackArt.jsx';
 import CollectionBreakdown, { Meter, QUALITIES } from './CollectionBreakdown.jsx';
 import CollectionSetDialog from './CollectionSetDialog.jsx';
@@ -24,9 +25,10 @@ export default function CollectionStats({ cards, loading, error, onShowMissing, 
   const sortedSets = [...sets].sort((a, b) => sort === 'release' ? 0 :
     (sort === 'completion' ? completion(sum(b.rarities, key), sum(b.rarities, 'total')) - completion(sum(a.rarities, key), sum(a.rarities, 'total'))
       : sum(b.rarities, 'total') - sum(b.rarities, key) - (sum(a.rarities, 'total') - sum(a.rarities, key))));
-  if (loading || error || !allSets.length) return <section className="cs-workspace" aria-label="收藏统计"><div className="paper cs-paper"><div className="empty-state" role={error ? 'alert' : 'status'}>
-    <Icon name={error ? 'alert' : 'collection'} /><h2>{loading ? '正在读取收藏统计' : error ? '收藏统计暂时无法载入' : '暂无可统计的卡牌'}</h2>
-    <p>{loading ? '正在读取与我的收藏相同的卡库和持有数据。' : error || '卡库尚未载入，请重新加载。'}</p>
+  if (error) return <section className="cs-workspace" aria-label="收藏统计"><div className="paper cs-paper"><UnavailableState title="收藏统计暂时无法载入" message={error} onRetry={onRetry} /></div></section>;
+  if (loading || !allSets.length) return <section className="cs-workspace" aria-label="收藏统计"><div className="paper cs-paper"><div className="empty-state" role="status">
+    <Icon name="collection" /><h2>{loading ? '正在读取收藏统计' : '暂无可统计的卡牌'}</h2>
+    <p>{loading ? '正在读取与我的收藏相同的卡库和持有数据。' : '卡库尚未载入，请重新加载。'}</p>
     {!loading ? <button className="gold-button" onClick={onRetry}>重新加载</button> : null}
   </div></div></section>;
   return <section className="cs-workspace" aria-label="收藏统计">

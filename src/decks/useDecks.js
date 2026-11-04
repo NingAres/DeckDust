@@ -72,6 +72,7 @@ export default function useDecks({ cards, cardReferences = [], onBegin, onNotice
     try {
       const data = await request('decks');
       setDecks(data.decks);
+      setReady(true);
       // Refresh a clean active deck too, while never overwriting local edits.
       setDraft(current => {
         if (!current || !sameDeckContents(current, decks.find(deck => deck.id === current.id))) return current;

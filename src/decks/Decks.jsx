@@ -2,6 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import ClassEmblem from '../components/ClassEmblem.jsx';
 import { deckClass, deckStats, encodeDeck, FORMATS, HERO_ART } from './model.js';
 import Icon from '../components/Icon.jsx';
+import UnavailableState from '../components/UnavailableState.jsx';
 import PackSymbol from '../packs/PackSymbol.jsx';
 import DeckClassArt from './DeckClassArt.jsx';
 import PackCardArt from '../packs/PackCardArt.jsx';
@@ -155,14 +156,18 @@ function DustBreakdown({ kind, value, entries, craftEntries = [], loading }) {
   </div>;
 }
 
-export default function Decks({ cards, cardReferences = [], loading, controller, onNotice }) {
+export default function Decks({ cards, cardReferences = [], loading, collectionError = '', onRetryCollection, controller, onNotice }) {
   const { decks, draft, ready, busy, refreshing, refreshDecks, error, setDialog } = controller;
+  const unavailableMessage = collectionError || (!ready ? error : '');
+  if (unavailableMessage) return <section className="cs-workspace deck-unavailable" aria-label="我的套牌记录"><div className="paper cs-paper">
+    <UnavailableState title="套牌暂时无法载入" message={unavailableMessage} onRetry={collectionError ? onRetryCollection : refreshDecks} />
+  </div></section>;
   return <section className="decks-library" aria-label="我的套牌记录">
     <div className="saved-heading"><div><small>YOUR DECKS</small><h2 className="page-title">我的套牌</h2><p>新建或选择套牌，在我的收藏中构筑。</p></div><span className="deck-record-count">{decks.length} 套</span>
       <div className="deck-library-actions"><button type="button" className={`deck-refresh-icon${refreshing ? ' is-refreshing' : ''}`} aria-label="刷新套牌列表" title="刷新套牌列表" disabled={!ready || busy || refreshing || loading} onClick={refreshDecks}><Icon name="refresh" /></button><button className="simple-button" disabled={!ready || busy || loading} onClick={() => setDialog({ type: 'import' })}>导入套牌</button><button className="gold-button" disabled={!ready || busy || loading} onClick={() => setDialog({ type: 'new' })}>新建套牌</button></div></div>
     {error && <p className="deck-error" role="alert">{error}</p>}
     {draft && <div className="draft-resume"><span>当前草稿：<b>{draft.name || '未命名套牌'}</b>{controller.dirty ? ' · 未保存' : ''}</span><button className="simple-button" onClick={() => controller.start(draft)} disabled={busy}>继续构筑</button></div>}
-    {!ready ? <p role="status">{error ? '套牌读取失败，请重启后重试。' : '正在读取本机套牌…'}</p> : !decks.length ? <div className="deck-empty"><h3>开始你的第一套构筑</h3><p>选择职业新建，或通过卡组代码 / JSON 文件导入。</p><small>新建后会进入我的收藏，直接点卡添加。</small></div> : <div className="saved-list">{decks.map(deck => {
+    {!ready ? <p role="status">正在读取本机套牌…</p> : !decks.length ? <div className="deck-empty"><h3>开始你的第一套构筑</h3><p>选择职业新建，或通过卡组代码 / JSON 文件导入。</p><small>新建后会进入我的收藏，直接点卡添加。</small></div> : <div className="saved-list">{decks.map(deck => {
       const stats = deckStats(deck, cards), cls = deckClass(deck, [...cards, ...cardReferences]);
       const ownershipState = stats.missing > 0 ? 'is-missing' : stats.owned >= stats.limit ? 'is-complete' : 'is-partial';
       return <article key={deck.id} className={`saved-card ${draft?.id === deck.id ? 'selected' : ''}`}>
