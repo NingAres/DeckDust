@@ -108,28 +108,27 @@ function drawCurve(ctx, curve, x, y, width, height) {
   });
 }
 
-function drawRow(ctx, row, image, x, y, width, height, mode) {
+function drawRow(ctx, row, image, x, y, width, height) {
   roundedRect(ctx, x, y, width, height, 5);
   ctx.save(); ctx.clip();
   ctx.fillStyle = '#18222d'; ctx.fillRect(x, y, width, height);
   const focusY = row.card?.type === 'MINION' || row.card?.type === 'HERO' ? .24 : .5;
-  if (image && mode === 'layered') {
-    ctx.save(); ctx.filter = 'blur(12px) saturate(.88)'; ctx.globalAlpha = .76;
-    ctx.drawImage(image, ...coverCrop(image, x - 10, y - 10, width + 20, height + 20, focusY)); ctx.restore();
-    const artWidth = Math.min(width * .72, height * image.width / image.height);
+  if (image) {
+    const artWidth = Math.round(width * .58);
     const artX = x + width - artWidth;
-    ctx.save(); roundedRect(ctx, artX, y, artWidth, height, 0); ctx.clip();
+    ctx.save();
+    ctx.filter = 'blur(8px)'; ctx.globalAlpha = .5;
     ctx.drawImage(image, ...coverCrop(image, artX, y, artWidth, height, focusY));
-    const mask = ctx.createLinearGradient(artX, 0, artX + artWidth, 0);
-    mask.addColorStop(0, 'rgba(0,0,0,0)'); mask.addColorStop(.46, 'rgba(0,0,0,.08)');
-    mask.addColorStop(.78, '#000'); mask.addColorStop(1, '#000');
-    ctx.globalCompositeOperation = 'destination-in'; ctx.fillStyle = mask; ctx.fillRect(artX, y, artWidth, height); ctx.restore();
-  } else if (image) {
-    ctx.drawImage(image, ...coverCrop(image, x, y, width, height, focusY));
+    ctx.restore();
+    ctx.drawImage(image, ...coverCrop(image, artX, y, artWidth, height, focusY));
+    const blend = ctx.createLinearGradient(artX - 24, 0, artX + 86, 0);
+    blend.addColorStop(0, '#18222d'); blend.addColorStop(.22, '#18222d');
+    blend.addColorStop(.58, '#18222db8'); blend.addColorStop(1, '#18222d00');
+    ctx.fillStyle = blend; ctx.fillRect(x, y, width, height);
   }
   const overlay = ctx.createLinearGradient(x, y, x + width, y);
-  overlay.addColorStop(0, '#101820dc'); overlay.addColorStop(.34, '#101820a6');
-  overlay.addColorStop(.7, '#10182020'); overlay.addColorStop(1, '#10182065');
+  overlay.addColorStop(0, '#10182050'); overlay.addColorStop(.5, '#10182030');
+  overlay.addColorStop(.8, '#10182008'); overlay.addColorStop(1, '#10182080');
   ctx.fillStyle = overlay; ctx.fillRect(x, y, width, height);
   ctx.restore();
   const rarity = row.card?.rarity || 'FREE';
@@ -148,13 +147,15 @@ function drawRow(ctx, row, image, x, y, width, height, mode) {
   ctx.textAlign = 'left'; ctx.font = '600 12px system-ui, sans-serif';
   const maxNameWidth = countX - nameX - countWidth - 12;
   let displayName = name;
-  while (displayName.length > 1 && ctx.measureText(displayName).width > maxNameWidth) {
-    displayName = `${displayName.slice(0, -1)}…`;
+  let nameLength = name.length;
+  while (nameLength > 1 && ctx.measureText(displayName).width > maxNameWidth) {
+    nameLength--;
+    displayName = `${name.slice(0, nameLength)}…`;
   }
   ctx.fillStyle = '#fff2d5'; ctx.fillText(displayName, nameX, y + height / 2 + .5);
 }
 
-export async function exportDeckPng(deck, cards, artMode = 'cover') {
+export async function exportDeckPng(deck, cards) {
   const rows = deckRows(deck, cards);
   const cls = inferExportClass(deck, cards);
   const hero = cards.find(card => card.dbfId === deck.hero) || cards.find(card => card.id === HERO_ART[cls]);
@@ -215,7 +216,7 @@ export async function exportDeckPng(deck, cards, artMode = 'cover') {
   rows.forEach((row, index) => {
     const column = Math.floor(index / rowsPerColumn), line = index % rowsPerColumn;
     const x = margin + column * (columnWidth + gap), y = startY + line * (rowHeight + rowGap);
-    drawRow(ctx, row, rowImages.get(row.id), x, y, columnWidth, rowHeight, artMode);
+    drawRow(ctx, row, rowImages.get(row.id), x, y, columnWidth, rowHeight);
   });
   const codeY = listBottom + 14;
   roundedRect(ctx, margin, codeY, width - margin * 2, codePanelHeight, 7);

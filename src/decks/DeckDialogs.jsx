@@ -112,9 +112,10 @@ export default function DeckDialogs({ controller, cards, cardReferences = [], on
   }, [cards, cardReferences, exportReferences]);
   if (!dialog) return null;
   const close = () => { if (!busy) setDialog(null); };
-  const titles = { new: '新建套牌 · 选择职业', import: '导入套牌', delete: '删除套牌', switch: '切换构筑', export: '导出套牌' };
+  const titles = { new: '新建套牌 · 选择职业', import: '导入套牌', delete: '删除套牌', switch: '切换构筑', cancel: '取消构筑', export: '导出套牌' };
   const exportDeck = dialog.type === 'export' ? allocateDeckVariants(dialog.deck, exportCards) : null;
   return <Modal title={titles[dialog.type]} onClose={close}><div className="deck-dialog">
+    {dialog.type === 'cancel' && <><p>取消构筑将放弃当前草稿中未保存的修改。</p><div className="deck-switch-actions"><button className="simple-button" onClick={close}>继续编辑</button><button className="gold-button" onClick={() => { controller.setDraft(null); close(); }}>放弃草稿</button></div></>}
     {dialog.type === 'new' && <><p>选择职业后进入我的收藏，直接点卡加入套牌。</p><div className="new-deck-classes">{CLASSES.filter(([key]) => HEROES[key]).map(([key, label]) => <button className="simple-button new-deck-class" key={key} onClick={() => controller.start({ name: `${label}新套牌`, hero: HEROES[key], format: 1, entries: [] })}><ClassEmblem cardClass={key} /><span>{label}</span></button>)}</div></>}
     {dialog.type === 'import' && <ImportDeck cards={cards} cardReferences={cardReferences} onReferences={onReferences} controller={controller} />}
     {dialog.type === 'switch' && <><p>当前套牌有未保存修改，切换将放弃这些修改。已保存记录仍会保留。</p><div className="deck-switch-actions"><button className="gold-button" onClick={() => controller.activate(dialog.next)}>放弃修改并切换</button><button className="simple-button" onClick={close}>继续当前构筑</button></div></>}

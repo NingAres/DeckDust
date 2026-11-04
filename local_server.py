@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import mimetypes
+import os
 import re
 import sqlite3
 import threading
@@ -235,7 +236,11 @@ class AppHandler(SimpleHTTPRequestHandler):
             if not isinstance(body, dict):
                 raise ValueError('请求必须是 JSON 对象。')
             route = urlparse(self.path).path
-            if route == '/api/packs/record/save':
+            if route == '/api/deck-exports/open':
+                self.export_dir.mkdir(parents=True, exist_ok=True)
+                os.startfile(str(self.export_dir.resolve()))
+                result = {'opened': True}
+            elif route == '/api/packs/record/save':
                 result = self.packs.save_record(body.get('record'))
             elif route == '/api/packs/record/delete':
                 result = self.packs.delete_record(body.get('id'), body.get('revision'))

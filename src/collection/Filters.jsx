@@ -22,11 +22,11 @@ export function ClassSelector({ value, onChange, allowedClasses }) {
 }
 
 export default function Filters({ filters, sets, onChange, onMore }) {
-  const advanced = ['quality', 'ownership', 'threshold', 'type', 'sort'].some(key => filters[key] !== DEFAULT_FILTERS[key]);
+  const advanced = ['format', 'quality', 'ownership', 'threshold', 'type', 'sort'].some(key => filters[key] !== DEFAULT_FILTERS[key]);
   return <footer className="filters-bottom">
       <div className="expansion-control"><img className="set-selector-art" src="/assets/native-ui/extracted/set-book-emblem.png" alt="" />
         <select className="set-select" aria-label="扩展包筛选" value={filters.set} onChange={event => onChange({ set: event.target.value })}>
-          <option value="">所有扩展包</option><option value="@standard">标准范围 · 全部系列</option><option value="@wild">狂野范围 · 全部系列</option>{sets.map(set => <option value={set} key={set}>{SET_NAMES[set] || set}</option>)}
+          <option value="">所有扩展包</option>{sets.map(set => <option value={set} key={set}>{SET_NAMES[set] || set}</option>)}
         </select>
       </div>
       <div className="mana-row" role="group" aria-label="法力值筛选">

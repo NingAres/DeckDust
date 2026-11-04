@@ -6,6 +6,9 @@
 .decks-library .saved-heading { gap: 12px; flex-wrap: wrap; margin-top: 0; }
 .decks-library .saved-heading p { margin: 5px 0; }
 .deck-library-actions { display: flex; gap: 10px; margin-left: auto; }
+.draft-resume-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.draft-resume > span { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .draft-resume { flex-wrap: wrap; } .draft-resume-actions { margin-left: auto; } }
 .deck-library-actions .deck-refresh-icon { appearance: none; width: 28px; height: 28px; display: grid; place-items: center; align-self: center; padding: 4px; border: 0; border-radius: 50%; background: transparent; box-shadow: none; color: #74552f; cursor: pointer; }
 .deck-refresh-icon svg { width: 18px; height: 18px; }
 .deck-refresh-icon:focus-visible { outline: 2px solid #6e9cb4; outline-offset: 2px; }

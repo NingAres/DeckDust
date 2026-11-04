@@ -27,7 +27,7 @@ export const SET_NAMES = {
   BE: '黑暗帝国的统治', CATACLYSM: '大地的裂变', EVENT: '活动卡牌', ESCAPEFROM_VIOLET_HOLD: '紫罗兰监狱',
 };
 export const DEFAULT_FILTERS = {
-  class: '', set: '', mana: '', query: '', rarity: '', quality: '', ownership: '', threshold: '1', type: '', sort: 'cost',
+  class: '', set: '', format: '', mana: '', query: '', rarity: '', quality: '', ownership: '', threshold: '1', type: '', sort: 'cost',
 };
 export const PREFERENCE_KEY = 'deck-dust-collection-filters-v1';
 const EMPTY_COUNTS = [0, 0, 0, 0];
@@ -59,7 +59,7 @@ export function scopeCards(cards, filters) {
   const terms = filters.query.toLocaleLowerCase('zh-CN').trim().split(/\s+/).filter(Boolean);
   return cards.filter(card =>
     (!filters.class || (card.classes || [card.cardClass]).includes(filters.class)) &&
-    matchesSetScope(card.set, filters.set) && (!filters.rarity || card.rarity === filters.rarity) &&
+    matchesSetScope(card.set, filters.set) && matchesSetScope(card.set, filters.format) && (!filters.rarity || card.rarity === filters.rarity) &&
     (!filters.type || card.type === filters.type) &&
     (!filters.mana || (filters.mana === '7+' ? (card.cost || 0) >= 7 : (card.cost || 0) === Number(filters.mana))) &&
     terms.every(term => card.searchText.includes(term)));
@@ -117,6 +117,11 @@ export function loadFilters() {
   try {
     const raw = JSON.parse(localStorage.getItem(PREFERENCE_KEY) || '{}');
     const filters = Object.fromEntries(Object.entries(DEFAULT_FILTERS).map(([key, value]) => [key, typeof raw[key] === 'string' ? raw[key] : value]));
+    if (['@standard', '@wild'].includes(filters.set)) {
+      filters.format = filters.set;
+      filters.set = '';
+    }
+    if (!['', '@standard', '@wild'].includes(filters.format)) filters.format = '';
     if (!['', ...CLASSES.map(([key]) => key)].includes(filters.class)) filters.class = '';
     if (!['', ...QUALITIES.map(([key]) => key)].includes(filters.quality)) filters.quality = '';
     if (!['', 'owned', 'missing', 'incomplete'].includes(filters.ownership)) filters.ownership = '';

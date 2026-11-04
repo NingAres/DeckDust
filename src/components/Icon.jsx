@@ -1,4 +1,5 @@
 const paths = {
+  folder: <path d="M3 7V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />,
   crown: <><path d="m4 8 4.5 3L12 5l3.5 6L20 8l-2 10H6L4 8Z" fill="currentColor" stroke="none"/><path d="M7 21h10" strokeWidth="2.2"/></>,
   trophy: <><path d="M7 3h10v5a5 5 0 0 1-10 0V3ZM7 5H4v2a4 4 0 0 0 4 4m9-6h3v2a4 4 0 0 1-4 4M12 13v5m-4 3h8m-7-3h6v3"/></>,
   calendar: <><rect x="3.5" y="5" width="17" height="16" rx="2.2"/><path d="M7.5 3.5v4M16.5 3.5v4"/><path d="M4 10h16"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" strokeWidth="2.8"/></>,
