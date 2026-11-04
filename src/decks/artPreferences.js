@@ -2,8 +2,8 @@ export const DECK_ART_MODES = Object.freeze({ COVER: 'cover', LAYERED: 'layered'
 const STORAGE_KEY = 'deckDust.deckArtMode';
 
 export function readDeckArtMode() {
-  try { return localStorage.getItem(STORAGE_KEY) === DECK_ART_MODES.LAYERED ? DECK_ART_MODES.LAYERED : DECK_ART_MODES.COVER; }
-  catch { return DECK_ART_MODES.COVER; }
+  try { return localStorage.getItem(STORAGE_KEY) === DECK_ART_MODES.COVER ? DECK_ART_MODES.COVER : DECK_ART_MODES.LAYERED; }
+  catch { return DECK_ART_MODES.LAYERED; }
 }
 
 export function saveDeckArtMode(mode) {

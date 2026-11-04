@@ -16,7 +16,7 @@ async function getArt(card, type = 'strip') {
   for (const id of ids) for (const quality of type === 'tile' ? ['tile', 'strip'] : ['strip', 'tile']) {
     try {
       const result = await loadArt(id, quality);
-      const prepared = await prepareDeckArtwork(result.url, result.quality === 'strip' ? {} : { stripType: card.type || 'SPELL' });
+      const prepared = await prepareDeckArtwork(result.url, { stripType: card.type || 'SPELL' });
       return await imageFromUrl(prepared);
     } catch { /* Try the alternate art key and crop size before giving up. */ }
   }
@@ -121,14 +121,16 @@ function drawRow(ctx, row, image, x, y, width, height) {
     ctx.drawImage(image, ...coverCrop(image, artX, y, artWidth, height, focusY));
     ctx.restore();
     ctx.drawImage(image, ...coverCrop(image, artX, y, artWidth, height, focusY));
-    const blend = ctx.createLinearGradient(artX - 24, 0, artX + 86, 0);
-    blend.addColorStop(0, '#18222d'); blend.addColorStop(.22, '#18222d');
-    blend.addColorStop(.58, '#18222db8'); blend.addColorStop(1, '#18222d00');
+    const blend = ctx.createLinearGradient(artX - 16, 0, x + width, 0);
+    blend.addColorStop(0, '#18222d'); blend.addColorStop(.14, '#18222de7');
+    blend.addColorStop(.3, '#18222da6'); blend.addColorStop(.48, '#18222d52');
+    blend.addColorStop(.66, '#18222d19'); blend.addColorStop(.86, '#18222d00');
+    blend.addColorStop(1, '#18222d00');
     ctx.fillStyle = blend; ctx.fillRect(x, y, width, height);
   }
   const overlay = ctx.createLinearGradient(x, y, x + width, y);
-  overlay.addColorStop(0, '#10182050'); overlay.addColorStop(.5, '#10182030');
-  overlay.addColorStop(.8, '#10182008'); overlay.addColorStop(1, '#10182080');
+  overlay.addColorStop(0, '#10182018'); overlay.addColorStop(.5, '#10182000');
+  overlay.addColorStop(.86, '#10182000'); overlay.addColorStop(1, '#10182024');
   ctx.fillStyle = overlay; ctx.fillRect(x, y, width, height);
   ctx.restore();
   const rarity = row.card?.rarity || 'FREE';

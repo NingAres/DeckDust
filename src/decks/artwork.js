@@ -1,5 +1,5 @@
 // Trim only uniform near-white/transparent edge bands, not bright details in art.
-export function artworkContentBounds({ data, width, height }) {
+export function artworkContentBounds({ data, width, height }, stripFrame = false) {
   const blank = (x, y) => {
     const offset = (y * width + x) * 4;
     return data[offset + 3] < 8 || (Math.min(data[offset], data[offset + 1], data[offset + 2]) >= 235
@@ -33,6 +33,26 @@ export function artworkContentBounds({ data, width, height }) {
   while (width - right + 1 < softMaxX && mostlyBlankColumn(right - 1) && mostlyBlankColumn(right - 2)) right--;
   while (top + 1 < softMaxY && mostlyBlankRow(top) && mostlyBlankRow(top + 1)) top++;
   while (height - bottom + 1 < softMaxY && mostlyBlankRow(bottom - 1) && mostlyBlankRow(bottom - 2)) bottom--;
+  if (stripFrame) {
+    // Some strip sources have a colored outer fringe followed by a white mat.
+    // Find that mat inside the edge zone rather than requiring a white first pixel.
+    const frameEnd = (start, step, limit, isBlank) => {
+      for (let offset = 0; offset < limit - 1; offset++) {
+        let position = start + offset * step;
+        if (!isBlank(position) || !isBlank(position + step)) continue;
+        while (offset < limit && isBlank(position)) {
+          position += step;
+          offset++;
+        }
+        return offset < limit ? position : start;
+      }
+      return start;
+    };
+    if (left === 0) left = frameEnd(left, 1, Math.floor(width * .22), mostlyBlankColumn);
+    if (right === width) right = frameEnd(right - 1, -1, Math.floor(width * .22), mostlyBlankColumn) + 1;
+    if (top === 0) top = frameEnd(top, 1, Math.floor(height * .12), mostlyBlankRow);
+    if (bottom === height) bottom = frameEnd(bottom - 1, -1, Math.floor(height * .12), mostlyBlankRow) + 1;
+  }
   return { left, top, width: right - left, height: bottom - top };
 }
 
@@ -55,7 +75,7 @@ export function prepareDeckArtwork(url, { stripType } = {}) {
         canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
         const context = canvas.getContext('2d', { willReadFrequently: true });
         context.drawImage(image, 0, 0);
-        let bounds = artworkContentBounds(context.getImageData(0, 0, canvas.width, canvas.height));
+        let bounds = artworkContentBounds(context.getImageData(0, 0, canvas.width, canvas.height), !!stripType);
         if (stripType) {
           const focus = stripArtworkBounds(bounds.width, bounds.height, stripType);
           bounds = { left: bounds.left + focus.left, top: bounds.top + focus.top, width: focus.width, height: focus.height };

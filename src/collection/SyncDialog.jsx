@@ -240,7 +240,7 @@ export default function SyncDialog({ snapshot, onClose, onUpdated, syncPreferenc
         </label>
         <label className={deckArtMode === 'layered' ? 'selected' : ''}>
           <input type="radio" name="deck-art-mode" value="layered" checked={deckArtMode === 'layered'} onChange={() => onDeckArtModeChange('layered')} />
-          <span><strong>清晰主体 · 柔化背景</strong><small>右侧显示清晰主体，左侧用同一插画的模糊背景铺满。</small></span>
+          <span><strong>清晰主体 · 柔化背景</strong><small>右侧等宽显示清晰插画，左侧使用深色背景，中间柔化衔接。</small></span>
         </label>
       </fieldset>
       <p className="help-text">此选择会立即应用并保存在本机，不影响已保存的套牌。</p>
