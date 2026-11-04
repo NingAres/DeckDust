@@ -218,6 +218,7 @@ export default function App() {
   const packPage = PACK_PAGES.find(([, , key]) => key === view);
   return <div className="shell">
     <nav className="rail" aria-label="主导航"><div className="crest"><img src={brand} className="hs-brand-sigil" alt="炉石传说" /></div>
+      <div className="rail-section-label">收藏工具</div>
       <button className={`nav ${view === "collection" ? "active" : ""}`} aria-current={view === "collection" ? "page" : undefined} onClick={() => setView("collection")}><b><Icon name="collection" /></b><span>我的收藏</span></button>
       <button className={`nav ${view === "decks" ? "active" : ""}`} aria-current={view === "decks" ? "page" : undefined} onClick={() => setView("decks")}><b><Icon name="deck" /></b><span>我的套牌</span></button>
       <button className={`nav ${view === 'collection-stats' ? 'active' : ''}`} aria-label="收藏统计" title="收藏统计" aria-current={view === 'collection-stats' ? 'page' : undefined} onClick={() => setView('collection-stats')}><b><Icon name="pie" /></b><span>收藏统计</span></button>
