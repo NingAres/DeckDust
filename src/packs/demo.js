@@ -72,31 +72,26 @@ export function overviewRows(records) {
   }
   return [...groups.values()].map(group => ({ ...group, ...summarize(group.records) }));
 }
-// Source project's configured limits, shown as preview rules pending real integration.
+// General rarity and special-quality counters use their own reset targets.
 export const PREVIEW_PITY_RULES = {
-  normal: [['epic', 10, ['epic', 'goldEpic']], ['legendary', 40, ['legendary']], ['goldLegendary', 361, ['goldLegendary']], ['signature', 361, ['signature']]],
+  normal: [['epic', 10, ['epic', 'goldEpic']], ['legendary', 40, ['legendary', 'goldLegendary', 'signature']], ['goldLegendary', 361, ['goldLegendary']], ['signature', 361, ['signature']]],
   gold: [['goldLegendary', 40, ['goldLegendary']], ['signature', 40, ['signature']]],
   variant_gold: [['goldLegendary', 40, ['goldLegendary']], ['signature', 14, ['signature']]],
 };
 export function pityPreview(records, set, type) {
-  const ordered = records.filter(record => record.set === set && record.type === type).sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+  // Sort actual packs globally. Record IDs are random and cannot order batches
+  // opened in the same second, including records split at a legendary.
+  const ordered = records.filter(record => record.set === set && record.type === type).flatMap(record =>
+    record.cardPacks?.length ? record.cardPacks.map(pack => ({ ...pack, count: 1 })) : [record])
+    .sort((a, b) => b.date.localeCompare(a.date) || (b.version || '').localeCompare(a.version || '', undefined, { numeric: true }) || b.id.localeCompare(a.id));
   return (PREVIEW_PITY_RULES[type] || []).map(([quality, total, keys]) => {
     let since = 0;
     for (const record of ordered) {
-      const packs = record.cardPacks?.length
-        ? [...record.cardPacks].sort((a, b) => b.date.localeCompare(a.date) || b.version.localeCompare(a.version, undefined, { numeric: true }) || b.id.localeCompare(a.id))
-        : null;
-      if (packs) {
-        let hit = false;
-        for (const pack of packs) {
-          if (pack.cards.some(card => keys.includes(card.qualityKey))) { hit = true; break; }
-          since += 1;
-        }
-        if (hit) break;
-      } else {
-        if (keys.some(key => record.qualities[key] > 0)) break;
-        since += record.count;
-      }
+      const hit = record.cards
+        ? record.cards.some(card => keys.includes(card.qualityKey))
+        : keys.some(key => record.qualities[key] > 0);
+      if (hit) break;
+      since += record.count;
     }
     return { quality, total, since, left: Math.max(0, total - since) };
   });

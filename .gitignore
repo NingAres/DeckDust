@@ -21,12 +21,10 @@ cloud-backup.json
 HSReplayProfile/
 card-art/
 
-# User supplied reference crops are not cleared for redistribution
-assets/mana-crystals/
-assets/native-ui/class-emblems/
-assets/native-ui/extracted/
+# Extraction intermediates and non-runtime design references
+assets/native-ui/extracted/*
+!assets/native-ui/extracted/set-book-emblem.png
 assets/native-ui/extracted-class-symbols/
-assets/ui-skin/
 design-system/deck-dust/collection-concept.png
 
 # Local/editor/OS metadata and packaged application output

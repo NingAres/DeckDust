@@ -33,9 +33,29 @@ class CardArtCache:
         self.slots = threading.BoundedSemaphore(4)
         self.lock = threading.Lock()
 
-    def get(self, card_id: str, quality: str):
+    def cached(self, card_id: str, quality: str):
         if not re.fullmatch(r'[A-Za-z0-9_]{1,90}', card_id) or quality not in ('normal', 'golden', 'diamond', 'signature', 'tile', 'strip'):
             raise ValueError('无效卡牌图片。')
+        suffixes = {'normal': '.png', 'golden': '_golden.png', 'diamond': '_diamond.png',
+                    'signature': '_signature.png', 'tile': '_tile.jpg', 'strip': '_strip.webp'}
+        file = self.root / f'{card_id}{suffixes[quality]}'
+        if file.is_file():
+            return file, quality
+        if quality == 'strip':
+            tile = self.root / f'{card_id}_tile.jpg'
+            if tile.is_file():
+                return tile, 'tile'
+        if quality in ('golden', 'diamond', 'signature'):
+            missing = file.with_suffix('.missing')
+            normal = self.root / f'{card_id}.png'
+            if missing.exists() and time.time() - missing.stat().st_mtime < 86400 and normal.is_file():
+                return normal, 'normal'
+        return None, quality
+
+    def get(self, card_id: str, quality: str):
+        cached = self.cached(card_id, quality)
+        if cached[0]:
+            return cached
         if quality == 'strip':
             file = self.root / f'{card_id}_strip.webp'
             failed = file.with_suffix('.missing')
@@ -43,6 +63,9 @@ class CardArtCache:
                 return file, quality
             if not failed.exists() or time.time() - failed.stat().st_mtime >= 86400:
                 with self.slots:
+                    cached = self.cached(card_id, quality)
+                    if cached[0]:
+                        return cached
                     try:
                         req = urllib.request.Request(f'https://art.hearthstonejson.com/v1/tiles/{card_id}.webp', headers={'User-Agent': 'Mozilla/5.0'})
                         with urllib.request.urlopen(req, timeout=7) as response:
@@ -64,6 +87,8 @@ class CardArtCache:
             if file.exists():
                 return file, quality
             with self.slots:
+                if file.exists():
+                    return file, quality
                 try:
                     req = urllib.request.Request(f'https://art.hearthstonejson.com/v1/256x/{card_id}.jpg', headers={'User-Agent': 'Mozilla/5.0'})
                     with urllib.request.urlopen(req, timeout=7) as response:
@@ -193,7 +218,8 @@ class AppHandler(SimpleHTTPRequestHandler):
                 parts = path.split('/')
                 if len(parts) != 5:
                     raise ValueError('无效图片路径。')
-                file, quality = self.art.get(parts[3], parts[4])
+                cached_only = parse_qs(urlparse(self.path).query).get('cached') == ['1']
+                file, quality = self.art.cached(parts[3], parts[4]) if cached_only else self.art.get(parts[3], parts[4])
                 if file:
                     self.send_file(file, 'image/webp' if quality == 'strip' else 'image/jpeg' if quality == 'tile' else 'image/png', {'Cache-Control': 'public, max-age=86400', 'X-Art-Quality': quality})
                 else:

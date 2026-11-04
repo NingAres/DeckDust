@@ -24,6 +24,14 @@ Deck Dust is a Windows-first Hearthstone collection, deck and pack tracking util
 - Treat third-party card image sources as optional. Handle missing images without corrupting collection data.
 - Keep runtime caches and personal databases in the user's data directory, outside the source tree and distribution assets.
 
+## Pack records and pity counters
+
+- The normal-pack legendary counter resets on ordinary, golden or signature legendary cards. Golden-legendary and signature counters retain their own quality-specific resets.
+- Count actual log packs in chronological order, using numeric collection-version and pack indices when timestamps match. Random record IDs must not determine pack order.
+- Confirmed log batches end a record at each pack containing a legendary of any quality. Five packs with a legendary in pack 3 become records of 3 and 2 packs. Hits in packs 2 and 4 become records of 2, 2 and 1 packs. Multiple legendaries within one pack produce one boundary.
+- Existing modern batches may be reconstructed only when all linked real packs and quality totals agree. Back up the SQLite database before splitting and retain every event link, total, original record ID and edit history. Legacy aggregates and manually corrected totals require their existing provenance.
+- The 2026-11-04 regression audit traced the omitted legendary variants, unsplit batches and ignored runtime icons to the earliest available source commit `abdf958`. The `5ff1836` EXE build also omitted mana and class assets from its clean checkout. Runtime asset completeness must be checked before and after frontend builds.
+
 ## Privacy
 
 Do not commit collection exports, SQLite databases, account sessions, cloud credentials, local filesystem paths, or screenshots with user data.

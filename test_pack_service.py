@@ -67,6 +67,45 @@ class PackTests(unittest.TestCase):
         self.store.confirm(['e2'], None, discard=True)
         self.assertEqual(self.store.read()['pending'], [])
 
+    def test_batch_splits_at_every_legendary_in_pack_order(self):
+        for positions, expected in [({3}, [3, 2]), ({2, 4}, [2, 2, 1])]:
+            with self.subTest(positions=positions):
+                ids = []
+                for index in range(1, 6):
+                    identifier = f'batch-{min(positions)}-{index}'
+                    cards = [{'card_id': 1, 'premium': 0}] * 4 + [
+                        {'card_id': 3 if index in positions else 2, 'premium': 3 if index in positions else 0}]
+                    self.event(identifier, cards)
+                    ids.append(identifier)
+                data = self.store.confirm(list(reversed(ids)), self.exp)
+                records = [r for r in data['records'] if any(p['id'] in ids for p in r.get('cardPacks', []))]
+                self.assertEqual([r['count'] for r in reversed(records)], expected)
+                self.assertEqual(sum(len(r['cardDetails']) for r in records), 25)
+
+    def test_existing_complete_batch_is_split_once_with_backup_and_event_links(self):
+        cards = []
+        for index in range(1, 6):
+            pack = [{'card_id': 1, 'premium': 0}] * 4 + [{'card_id': 3 if index in (2, 4) else 2, 'premium': 3 if index in (2, 4) else 0}]
+            self.event(f'old-{index}', pack)
+            cards.extend(pack)
+        with self.store.connect() as db:
+            record_id = self.store._insert_record(db, self.record(5, **self.store.event_counts(cards)), self.exp, '日志识别')
+            db.execute("UPDATE events SET status='confirmed',record_id=?,expansion_id=?", (record_id, self.exp))
+        updated = PackStore(self.store.data_dir, CATALOG)
+        data = updated.read()
+        self.assertEqual([r['count'] for r in reversed(data['records'])], [2, 2, 1])
+        self.assertEqual(sum(r['count'] for r in data['statsRecords']), 5)
+        self.assertEqual(sum(r['qualities']['signature'] for r in data['records']), 2)
+        self.assertEqual(len(data['recentRecords']), 5)
+        self.assertEqual(len(list((self.store.data_dir / 'backups').glob('packs-before-batch-split-*.sqlite3'))), 1)
+        backup = next((self.store.data_dir / 'backups').glob('packs-before-batch-split-*.sqlite3'))
+        with closing(sqlite3.connect(backup)) as db:
+            self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0], 'ok')
+            self.assertEqual(db.execute('SELECT count(*) FROM records').fetchone()[0], 1)
+        again = PackStore(self.store.data_dir, CATALOG).read()
+        self.assertEqual(again['records'], data['records'])
+        self.assertEqual(len(list((self.store.data_dir / 'backups').glob('packs-before-batch-split-*.sqlite3'))), 1)
+
     def test_move_record_preserves_event_and_updates_group(self):
         self.event('move-event', [{'card_id': 1, 'premium': 0}] * 5)
         row = self.store.confirm(['move-event'], self.exp)['records'][0]

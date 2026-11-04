@@ -48,8 +48,10 @@ class DataDirectoryTests(unittest.TestCase):
             relaunch_from_desktop(script, ['--port', '8766'])
         desktop = dispatch.return_value.Windows.return_value.FindWindowSW.return_value
         dispatch.return_value.Windows.return_value.FindWindowSW.assert_called_once_with(0, 0, 8, 0, 1)
+        windowless = Path(sys.executable).with_name('pythonw.exe')
+        expected_python = str(windowless) if windowless.exists() else sys.executable
         desktop.Document.Application.ShellExecute.assert_called_once_with(
-            sys.executable,
+            expected_python,
             subprocess.list2cmdline([str(script.resolve()), '--port', '8766', '--storage-relaunch']),
             str(script.resolve().parent), 'open', 0,
         )

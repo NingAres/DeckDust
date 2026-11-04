@@ -50,6 +50,16 @@ def legendary(record):
     return any(record['qualities'].get(key, 0) > 0 for key in LEGENDARIES)
 
 
+def event_order(event):
+    version = tuple((0, int(part)) if part.isdigit() else (1, part) for part in re.split(r'(\d+)', event['version']))
+    return event['date'], version, event['id']
+
+
+def record_order(record):
+    packs = record.get('cardPacks')
+    return event_order(packs[0] if packs else {**record, 'version': ''})
+
+
 def counts_equal(a, b):
     return (isinstance(a, dict) and isinstance(b, dict)
             and isinstance(a.get('qualities'), dict) and isinstance(b.get('qualities'), dict)
@@ -115,6 +125,7 @@ class PackStore:
             for table in ('expansions', 'records', 'events', 'imports', 'settings'):
                 for action in ('INSERT', 'UPDATE', 'DELETE'):
                     db.execute(f'CREATE TRIGGER IF NOT EXISTS version_{table}_{action} AFTER {action} ON {table} BEGIN UPDATE state_version SET revision=revision+1 WHERE id=1; END')
+        self._split_confirmed_batches()
 
     @contextmanager
     def connect(self):
@@ -127,9 +138,63 @@ class PackStore:
         finally:
             db.close()
 
-    def backup(self):
-        with closing(sqlite3.connect(self.db_path)) as source, closing(sqlite3.connect(self.data_dir / 'packs.previous.sqlite3')) as target:
+    def backup(self, destination=None):
+        with closing(sqlite3.connect(self.db_path)) as source, closing(sqlite3.connect(destination or self.data_dir / 'packs.previous.sqlite3')) as target:
             source.backup(target)
+
+    def _event_groups(self, selected_events):
+        groups, current = [], []
+        for event in sorted(selected_events, key=lambda item: event_order(item[0])):
+            current.append(event)
+            if legendary({'qualities': self.event_counts(event[1])}):
+                groups.append(current)
+                current = []
+        if current:
+            groups.append(current)
+        return groups
+
+    def _save_event_groups(self, db, groups, expansion_id, original=None):
+        old = json.loads(original['payload']) if original else {}
+        for index, group in enumerate(groups):
+            cards = [card for _, pack_cards, _ in group for card in pack_cards]
+            payload = {**old, 'count': len(group), 'date': group[0][0]['date'], 'qualities': self.event_counts(cards)}
+            if original and index == 0:
+                record_id = original['id']
+                payload = {**validate_record(payload), 'source': old.get('source', '日志识别')}
+                db.execute('UPDATE records SET payload=?,revision=revision+1 WHERE id=?', (encode(payload), record_id))
+                db.execute('INSERT INTO edits(record_id,date,before_json,after_json) VALUES (?,?,?,?)', (record_id, now(), original['payload'], encode(payload)))
+            else:
+                record_id = self._insert_record(db, payload, expansion_id, old.get('source', '日志识别'))
+            db.executemany("UPDATE events SET status='confirmed',record_id=?,expansion_id=? WHERE id=?", [(record_id, expansion_id, event['id']) for event, _, _ in group])
+
+    def _split_confirmed_batches(self):
+        # Only reconstruct complete modern log records. Legacy aggregates and
+        # manually corrected quantities remain available in their original form.
+        with self.lock, self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            changes = []
+            for row in db.execute('SELECT * FROM records WHERE deleted=0 AND baseline IS NULL AND legacy_id IS NULL').fetchall():
+                payload = json.loads(row['payload'])
+                if payload['count'] < 2:
+                    continue
+                events = [(event, json.loads(event['cards']), {}) for event in db.execute("SELECT * FROM events WHERE record_id=? AND status='confirmed' AND origin='log'", (row['id'],))]
+                if len(events) != payload['count'] or any(len(cards) != 5 for _, cards, _ in events):
+                    continue
+                try:
+                    values = self.event_counts([card for _, cards, _ in events for card in cards])
+                    if not counts_equal(payload, {'count': len(events), 'qualities': values}):
+                        continue
+                    groups = self._event_groups(events)
+                except ValueError:
+                    continue
+                if len(groups) > 1:
+                    changes.append((row, groups))
+            if changes:
+                directory = self.data_dir / 'backups'
+                directory.mkdir(parents=True, exist_ok=True)
+                self.backup(directory / (uid('packs-before-batch-split-') + '.sqlite3'))
+                for row, groups in changes:
+                    self._save_event_groups(db, groups, row['expansion_id'], row)
 
     def settings(self):
         with self.connect() as db:
@@ -273,8 +338,7 @@ class PackStore:
                     values = self.event_counts(cards)
                     if expansion['type'] != 'normal' and any(values[k] for k in ('common', 'rare', 'epic', 'legendary')):
                         raise ValueError('所选卡包包含普通品质卡，不能记为金色卡包。')
-                    record_id = self._insert_record(db, {'count': len(selected_events), 'date': min(event['date'] for event, _, _ in selected_events), 'qualities': values}, expansion_id, '日志识别')
-                    db.executemany("UPDATE events SET status='confirmed',record_id=?,expansion_id=? WHERE id=?", [(record_id, expansion_id, event['id']) for event, _, _ in selected_events])
+                    self._save_event_groups(db, self._event_groups(selected_events), expansion_id)
         return self.read()
 
     def _view_record(self, row, expansions):
@@ -313,7 +377,7 @@ class PackStore:
                 recent.append(entry)
             for record in records:
                 if record.get('cardPacks'):
-                    record['cardPacks'].sort(key=lambda pack: (pack['date'], tuple((0, int(part)) if part.isdigit() else (1, part) for part in re.split(r'(\d+)', pack['version'])), pack['id']))
+                    record['cardPacks'].sort(key=event_order)
                     record['cardDetails'] = [card for pack in record['cardPacks'] for card in pack['cards']]
             baseline = []
             cycles = []
@@ -338,7 +402,7 @@ class PackStore:
                         adjustments.append({**after, 'id': 'delta-' + row['id'], 'count': count, 'qualities': delta, 'source': '旧历史修订差额'})
             modern = [record for record in records if record.get('legacyId') is None]
             opened = {}
-            for record in sorted(modern, key=lambda item: (item['date'], item['id'])):
+            for record in sorted(modern, key=record_order):
                 key = record['expansionId']
                 if key not in opened:
                     previous = [cycle for cycle in cycles if cycle['expansionId'] == key]
@@ -358,7 +422,7 @@ class PackStore:
             revision = db.execute('SELECT revision FROM state_version WHERE id=1').fetchone()[0]
         # Baseline objects must remain independent of merged cycles.
         stats = [self._view_record(row, expansions) for row in self._baseline_rows()] + modern + adjustments
-        return {'records': sorted(records, key=lambda item: (item['date'], item['id']), reverse=True),
+        return {'records': sorted(records, key=record_order, reverse=True),
                 'expansions': [{'id': value['id'], 'name': value['name'], 'defaultType': value['type']} for value in expansions.values()],
                 'statsRecords': stats, 'cycles': sorted(cycles, key=lambda item: item['date'], reverse=True),
                 'recentRecords': recent, 'pending': pending, 'migration': reports,

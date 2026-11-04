@@ -42,6 +42,15 @@ function pump() {
   }
 }
 let queueOrder = 0;
+async function fetchArt(key, quality, cachedOnly = false) {
+  const response = await fetch(`/api/art/${key}${cachedOnly ? '?cached=1' : ''}`);
+  if (!response.ok) {
+    if (cachedOnly) return null;
+    throw new Error('卡面暂不可用');
+  }
+  return { url: URL.createObjectURL(await response.blob()), quality: response.headers.get('X-Art-Quality') || quality };
+}
+
 export function loadArt(id, quality, prefetch = false) {
   const key = `${id}/${quality}`;
   if (artCache.has(key)) {
@@ -49,16 +58,20 @@ export function loadArt(id, quality, prefetch = false) {
     if (queued && !prefetch) { queued.priority = 0; pump(); }
     return artCache.get(key);
   }
-  const task = new Promise((resolve, reject) => {
-    queue.push({ key, priority: prefetch ? 1 : 0, order: queueOrder++, run: async () => {
-      try {
-        const response = await fetch(`/api/art/${key}`);
-        if (!response.ok) throw new Error('卡面暂不可用');
-        const url = URL.createObjectURL(await response.blob());
-        resolve({ url, quality: response.headers.get('X-Art-Quality') || quality });
-      } catch (error) { artCache.delete(key); reject(error); }
-    }});
-    pump();
+  // Disk-only probes never occupy the four remote-download slots. A page turn
+  // can display cached cards while earlier speculative downloads are still slow.
+  const task = fetchArt(key, quality, true).then(cached => {
+    if (cached) return cached;
+    return new Promise((resolve, reject) => {
+      queue.push({ key, priority: prefetch ? 1 : 0, order: queueOrder++, run: async () => {
+        try { resolve(await fetchArt(key, quality)); }
+        catch (error) { reject(error); }
+      }});
+      pump();
+    });
+  }).catch(error => {
+    artCache.delete(key);
+    throw error;
   });
   artCache.set(key, task);
   // Avoid keeping an unlimited number of object URLs during a long collection session.

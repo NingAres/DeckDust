@@ -28,6 +28,7 @@ class SessionTests(unittest.TestCase):
         self.vault = SessionVault(self.path)
         self.session = {'account': '12345', 'region': 5, 'cookie': 'sessionid=private-test-token', 'userAgent': 'test-browser'}
         self.store = Mock(data_dir=self.path)
+        self.store.load_hsreplay_snapshot.return_value = None
         self.auth = HSReplayAuth(self.store)
 
     def tearDown(self):

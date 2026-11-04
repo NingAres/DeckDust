@@ -20,19 +20,21 @@ export function artworkContentBounds({ data, width, height }, stripFrame = false
   while (top < maxY && blankRow(top)) top++;
   while (height - bottom < maxY && blankRow(bottom - 1)) bottom--;
   // A large bright region may be intentional scenery; leave that edge alone.
-  if (left === maxX) left = 0;
-  if (width - right === maxX) right = width;
-  if (top === maxY) top = 0;
-  if (height - bottom === maxY) bottom = height;
+  const broadLeft = left === maxX, broadRight = width - right === maxX;
+  const broadTop = top === maxY, broadBottom = height - bottom === maxY;
+  if (broadLeft) left = 0;
+  if (broadRight) right = width;
+  if (broadTop) top = 0;
+  if (broadBottom) bottom = height;
   // JPEG/WebP fringes and card art exports can leave a few colored pixels
   // inside an otherwise white border. Tolerate those only in a narrow band.
   const mostlyBlankColumn = x => { let count = 0; for (let y = 0; y < height; y++) count += Number(edgeBlank(x, y)); return count / height >= .92; };
   const mostlyBlankRow = y => { let count = 0; for (let x = 0; x < width; x++) count += Number(edgeBlank(x, y)); return count / width >= .92; };
   const softMaxX = Math.max(2, Math.floor(width * .04)), softMaxY = Math.max(2, Math.floor(height * .04));
-  while (left + 1 < softMaxX && mostlyBlankColumn(left) && mostlyBlankColumn(left + 1)) left++;
-  while (width - right + 1 < softMaxX && mostlyBlankColumn(right - 1) && mostlyBlankColumn(right - 2)) right--;
-  while (top + 1 < softMaxY && mostlyBlankRow(top) && mostlyBlankRow(top + 1)) top++;
-  while (height - bottom + 1 < softMaxY && mostlyBlankRow(bottom - 1) && mostlyBlankRow(bottom - 2)) bottom--;
+  while (!broadLeft && left + 1 < softMaxX && mostlyBlankColumn(left) && mostlyBlankColumn(left + 1)) left++;
+  while (!broadRight && width - right + 1 < softMaxX && mostlyBlankColumn(right - 1) && mostlyBlankColumn(right - 2)) right--;
+  while (!broadTop && top + 1 < softMaxY && mostlyBlankRow(top) && mostlyBlankRow(top + 1)) top++;
+  while (!broadBottom && height - bottom + 1 < softMaxY && mostlyBlankRow(bottom - 1) && mostlyBlankRow(bottom - 2)) bottom--;
   if (stripFrame) {
     // Some strip sources have a colored outer fringe followed by a white mat.
     // Find that mat inside the edge zone rather than requiring a white first pixel.

@@ -22,7 +22,7 @@ class StripArtCacheTests(unittest.TestCase):
                 self.assertEqual(cache.get('TIME_875t', 'strip'), (file, 'strip'))
                 fetch.assert_not_called()
 
-    def test_missing_horizontal_art_falls_back_to_original_and_remembers_404(self):
+    def test_cached_original_art_serves_strip_without_network(self):
         with tempfile.TemporaryDirectory() as directory:
             cache = CardArtCache(Path(directory))
             original = cache.root / 'TEST_tile.jpg'
@@ -31,7 +31,16 @@ class StripArtCacheTests(unittest.TestCase):
             with patch('local_server.urllib.request.urlopen', side_effect=error) as fetch:
                 self.assertEqual(cache.get('TEST', 'strip'), (original, 'tile'))
                 self.assertEqual(cache.get('TEST', 'strip'), (original, 'tile'))
-                self.assertEqual(fetch.call_count, 1)
+                self.assertEqual(fetch.call_count, 0)
+
+    def test_disk_probe_never_downloads_and_validates_identifiers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache = CardArtCache(Path(directory))
+            with patch('local_server.urllib.request.urlopen') as fetch:
+                self.assertEqual(cache.cached('TEST', 'normal'), (None, 'normal'))
+                with self.assertRaises(ValueError):
+                    cache.cached('../TEST', 'normal')
+                fetch.assert_not_called()
 
 
 if __name__ == '__main__':

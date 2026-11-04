@@ -229,7 +229,7 @@ export function decodeDeck(text) {
   // headings, Deck IDs, and the code on the same line. Find the actual
   // base64 payload first; metadata must never be mistaken for the code.
   const source = String(text ?? '');
-  const candidates = source.match(/[A-Za-z0-9+/]{16,}={0,2}/g) || [];
+  const candidates = source.match(/[A-Za-z0-9+/]{12,}={0,2}/g) || [];
   const code = candidates.find(value => value.startsWith('AAE'))
     || candidates.find(value => value.length >= 24);
   if (!code || code.length > 16000) throw new Error('请粘贴有效的炉石卡组代码。');
