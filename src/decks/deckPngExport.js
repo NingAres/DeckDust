@@ -98,7 +98,7 @@ function roundedRect(ctx, x, y, width, height, radius) {
 
 function drawCurve(ctx, curve, x, y, width, height) {
   const max = Math.max(1, ...curve), gap = 5, itemWidth = (width - gap * 7) / 8;
-  ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
+  ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
   curve.forEach((count, index) => {
     const barHeight = Math.max(count ? 4 : 1, (height - 24) * count / max);
     const left = x + index * (itemWidth + gap);
@@ -198,22 +198,43 @@ export async function exportDeckPng(deck, cards) {
   if (heroArt) ctx.drawImage(heroArt, ...coverCrop(heroArt, avatarX, avatarY, avatarSize, avatarSize, .25));
   else if (classEmblem) ctx.drawImage(classEmblem, avatarX + 13, avatarY + 13, avatarSize - 26, avatarSize - 26);
   ctx.restore(); ctx.strokeStyle = '#d9b85e'; ctx.lineWidth = 3; roundedRect(ctx, avatarX, avatarY, avatarSize, avatarSize, 8); ctx.stroke();
-  ctx.fillStyle = '#f2d68f'; ctx.font = '700 24px system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-  ctx.fillText(deck.name || '未命名套牌', margin + avatarSize + 18, margin + 28);
-  const className = CLASSES.find(([key]) => key === cls)?.[1] || '自定义英雄';
-  ctx.fillStyle = '#ddc99e'; ctx.font = '15px system-ui, sans-serif';
-  ctx.fillText(`${className}  ·  ${deck.format === 1 ? '狂野' : deck.format === 3 ? '经典' : '标准'}  ·  ${effectiveDeckTotal(deck)}/${deckLimit(deck)} 张`, margin + avatarSize + 18, margin + 54);
-  const totals = craftingTotals(deck, cards);
-  const dustY = margin + 105, dustSize = 23;
-  if (dustIcon) ctx.drawImage(dustIcon, margin + avatarSize + 18, dustY - 18, dustSize, dustSize);
-  ctx.fillStyle = '#eee0c0'; ctx.font = '700 22px system-ui, sans-serif'; ctx.fillText(totals.normal.toLocaleString(), margin + avatarSize + 48, dustY);
-  if (dustIcon) {
-    ctx.drawImage(dustIcon, margin + avatarSize + 172, dustY - 18, dustSize, dustSize);
+  const infoX = avatarX + avatarSize + 18;
+  const curveWidth = 180, curveX = width - margin - curveWidth;
+  const infoWidth = curveX - infoX - 24;
+  ctx.fillStyle = '#f2d68f'; ctx.font = '700 24px system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  const name = deck.name || '未命名套牌';
+  let title = name, titleLength = name.length;
+  while (titleLength > 1 && ctx.measureText(title).width > infoWidth) {
+    titleLength--;
+    title = `${name.slice(0, titleLength)}…`;
   }
-  ctx.fillStyle = '#ffd12d'; ctx.fillText(totals.golden.toLocaleString(), margin + avatarSize + 202, dustY);
+  ctx.fillText(title, infoX, avatarY + 23);
+  const className = CLASSES.find(([key]) => key === cls)?.[1] || '自定义英雄';
+  ctx.fillStyle = '#ddc99e'; ctx.font = '14px system-ui, sans-serif';
+  ctx.fillText(`${className}  ·  ${deck.format === 1 ? '狂野' : deck.format === 3 ? '经典' : '标准'}  ·  ${effectiveDeckTotal(deck)}/${deckLimit(deck)} 张`, infoX, avatarY + 51);
+  const totals = craftingTotals(deck, cards);
+  const dustY = avatarY + 96, dustSize = 22;
+  const dustItems = [
+    { value: totals.normal, color: '#eee0c0' },
+    { value: totals.golden, color: '#ffd12d' },
+  ];
+  const dustGap = 16, dustColumnWidth = (infoWidth - dustGap) / 2;
+  dustItems.forEach((item, index) => {
+    const left = infoX + index * (dustColumnWidth + dustGap);
+    if (dustIcon) ctx.drawImage(dustIcon, left, dustY - dustSize / 2, dustSize, dustSize);
+    ctx.font = '700 22px system-ui, sans-serif';
+    const value = item.value.toLocaleString();
+    const valueWidth = dustColumnWidth - dustSize - 6;
+    if (ctx.measureText(value).width > valueWidth) ctx.font = '700 18px system-ui, sans-serif';
+    ctx.fillStyle = item.color;
+    ctx.fillText(value, left + dustSize + 6, dustY + 1);
+  });
   const curve = Array(8).fill(0);
   rows.forEach(row => { curve[Math.min(7, row.card?.cost || 0)] += 1; });
-  drawCurve(ctx, curve, width - margin - 180, margin + 14, 180, 100);
+  drawCurve(ctx, curve, curveX, avatarY + 12, curveWidth, avatarSize - 12);
+  ctx.strokeStyle = '#d6b45f38'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(margin, avatarY + avatarSize + 20);
+  ctx.lineTo(width - margin, avatarY + avatarSize + 20); ctx.stroke();
   const startY = margin + headerHeight;
   rows.forEach((row, index) => {
     const column = Math.floor(index / rowsPerColumn), line = index % rowsPerColumn;

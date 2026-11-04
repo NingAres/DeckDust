@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import ClassEmblem from '../components/ClassEmblem.jsx';
 import Icon from '../components/Icon.jsx';
 import Modal from '../components/Modal.jsx';
-import CardArt from '../collection/CardArt.jsx';
+import CardArt from '../packs/PackCardArt.jsx';
 import PackSymbol from '../packs/PackSymbol.jsx';
 import DeckStripArt from './DeckStripArt.jsx';
 import DeckClassArt from './DeckClassArt.jsx';

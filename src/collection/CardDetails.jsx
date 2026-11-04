@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Modal from '../components/Modal.jsx';
-import CardArt from './CardArt.jsx';
+import CardArt from '../packs/PackCardArt.jsx';
 import { bestQuality, CLASSES, QUALITIES, RARITIES, TYPES, SET_NAMES, requiredCopies, ownedCount, textOnly } from './model.js';
 import PackArt from '../packs/PackArt.jsx';
 import ClassEmblem from '../components/ClassEmblem.jsx';
