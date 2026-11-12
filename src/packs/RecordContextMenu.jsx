@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import Icon from '../components/Icon.jsx';
 
-export default function RecordContextMenu({ record, x, y, actions, onClose, host }) {
+export default function RecordContextMenu({ record, title = record?.set, subtitle = record?.date?.replace('T', ' '), x, y, actions, onClose, host }) {
   const menuRef = useRef(null);
   useLayoutEffect(() => {
     const menu = menuRef.current;
@@ -33,8 +33,8 @@ export default function RecordContextMenu({ record, x, y, actions, onClose, host
     event.preventDefault();
     buttons[next]?.focus();
   }
-  return createPortal(<div ref={menuRef} popover="auto" role="menu" aria-label={`${record.set}的记录操作`} className="pack-record-context-menu" onKeyDown={moveFocus} onContextMenu={event => event.preventDefault()}>
-    <div className="pack-record-context-heading">{record.set}<small>{record.date.replace('T', ' ')}</small></div>
-    {actions.map(action => <button key={action.label} type="button" role="menuitem" disabled={action.disabled} title={action.title} onClick={() => { onClose(); action.run(); }}><Icon name={action.icon} /><span>{action.label}</span><Icon name="right" /></button>)}
+  return createPortal(<div ref={menuRef} popover="auto" role="menu" aria-label={`${title}的记录操作`} className="pack-record-context-menu" onKeyDown={moveFocus} onContextMenu={event => event.preventDefault()}>
+    <div className="pack-record-context-heading">{title}{subtitle && <small>{subtitle}</small>}</div>
+    {actions.map(action => <button key={action.label} type="button" role="menuitem" className={action.danger ? 'danger' : undefined} disabled={action.disabled} title={action.title} onClick={() => { onClose(); action.run(); }}><Icon name={action.icon} /><span>{action.label}</span><Icon name="right" /></button>)}
   </div>, host || document.body);
 }

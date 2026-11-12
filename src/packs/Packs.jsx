@@ -12,6 +12,7 @@ import PackArt from './PackArt.jsx';
 import RecordCardDetails from './RecordCardDetails.jsx';
 import SelectedRecord from './SelectedRecord.jsx';
 import PendingPacks from './PendingPacks.jsx';
+import RecordContextMenu from './RecordContextMenu.jsx';
 import usePacks from './usePacks.js';
 import { comparePackExpansions } from './expansion-order.js';
 import { matchesRecordSearch } from './record-search.js';
@@ -62,6 +63,7 @@ export default function Packs({ view, cards, onNavigate, onNotice }) {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState('r1');
   const [dialog, setDialog] = useState(null);
+  const [seriesMenu, setSeriesMenu] = useState(null);
   const monitor = api.monitor.enabled;
   const [checked, setChecked] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -118,6 +120,16 @@ export default function Packs({ view, cards, onNavigate, onNotice }) {
       setChecked([]); setDialog(null); onNotice(discard ? '所选卡包已放弃。' : '卡包与单卡明细已一起保存。');
     } catch (error) { onNotice(error.message); } finally { setBusy(false); }
   }
+  function seriesActions(series) {
+    return [
+      { label: '选择该系列扩展包', icon: 'filter', run: () => transitionFilteredContent(() => { setSet(series.set); setType(series.type); setDialog(null); }) },
+      { label: '取消选择', icon: 'close', run: () => transitionFilteredContent(() => { setSet(''); setType(''); setDialog(null); }) },
+    ];
+  }
+  function openSeriesMenu(event, series) {
+    event.preventDefault();
+    setSeriesMenu({ series, x: event.clientX, y: event.clientY });
+  }
   function recordActions(record) {
     const cycle = api.cycles.find(item => item.records.some(entry => entry.id === record.id));
     const returnToCycle = dialog?.kind === 'cycle' ? dialog.cycle : undefined;
@@ -130,6 +142,7 @@ export default function Packs({ view, cards, onNavigate, onNotice }) {
       { label: '查看所属区间', icon: 'clock', disabled: !cycle, title: cycle ? undefined : '旧记录未保留可靠的区间关联', run: () => setDialog({ kind: 'cycle', cycle }) },
       { label: '查看分析', icon: 'chart', run: () => navigateToRecord('pack-analysis') },
       { label: '查看总览', icon: 'collection', run: () => navigateToRecord('pack-overview') },
+      ...seriesActions(record),
     ];
   }
   async function removeRecord() {
@@ -155,7 +168,7 @@ export default function Packs({ view, cards, onNavigate, onNotice }) {
         <HistoryTable recordActions={recordActions} records={filtered} pityRecords={records} catalog={cards} active={active?.id} onSelect={setSelected} onDetails={record => setDialog({ kind: 'details', record })} fillRows animatePages />
         {!filtered.length ? <div className="pack-empty"><Icon name="pack" /><h3>还没有符合条件的记录</h3><p>试试其他筛选，或新增一条开包记录。</p><button className="simple-button" onClick={() => transitionFilteredContent(() => { setSet(''); setType(''); setSource(''); setRange('all'); setQuery(''); })}>重置筛选</button></div> : null}
         {active ? <SelectedRecord ref={selectedSheet} record={active} catalog={cards} onDetails={() => setDialog({ kind: 'details', record: active })} /> : null}
-      </> : isAnalysis ? <PackAnalysis cycles={api.cycles.filter(cycle => (!set || cycle.set === set) && (!type || cycle.type === type))} records={records.filter(record => (!set || record.set === set) && (!type || record.type === type))} dateFrom={cutoff} dateTo={cutoff ? today : ""} onDetails={cycle => setDialog({ kind: 'cycle', cycle })} /> : <PackOverview records={statsFiltered} sort={sort} onSort={setSort} onTransition={transitionFilteredContent} />}
+      </> : isAnalysis ? <PackAnalysis onSeriesContextMenu={openSeriesMenu} cycles={api.cycles.filter(cycle => (!set || cycle.set === set) && (!type || cycle.type === type))} records={records.filter(record => (!set || record.set === set) && (!type || record.type === type))} dateFrom={cutoff} dateTo={cutoff ? today : ""} onDetails={cycle => setDialog({ kind: 'cycle', cycle })} /> : <PackOverview onSeriesContextMenu={openSeriesMenu} records={statsFiltered} sort={sort} onSort={setSort} onTransition={transitionFilteredContent} />}
       </div>
       <footer className="pack-paper-footer"><span>{api.loading ? "正在读取数据库…" : "本地数据库 · 自动保存"}</span><span>{api.migration.length ? "旧累计统计与原始单次明细分别保留" : "每包 5 张 · 按卡包类型独立累计"}</span></footer>
     </div>{isRecords ? <aside className="pack-sidebar"><section className="pack-monitor-panel"><div className="pack-section-heading"><h2>日志监控</h2><button className={`pack-switch ${monitor ? 'on' : ''}`} role="switch" aria-label="切换日志监控" aria-checked={monitor} disabled={busy} onClick={toggleMonitor}><span /></button></div>
@@ -171,6 +184,7 @@ export default function Packs({ view, cards, onNavigate, onNotice }) {
       <div className="dialog-actions pack-detail-actions"><button className="pack-link danger" onClick={() => setDialog({ kind: 'delete', record: dialog.record, returnToCycle: dialog.returnToCycle })}>删除记录</button><button className="simple-button" onClick={() => setDialog({ kind: 'edit', record: dialog.record, returnToCycle: dialog.returnToCycle })}>编辑记录</button><button className="gold-button" onClick={() => setDialog(dialog.returnToCycle ? { kind: 'cycle', cycle: dialog.returnToCycle } : null)}>完成</button></div></Modal> : null}
     {dialog?.kind === 'delete' ? <Modal title="删除开包记录？" onClose={() => setDialog({ kind: 'details', record: dialog.record, returnToCycle: dialog.returnToCycle })}><p>将删除本机数据库中的 {dialog.record.set} 的 {dialog.record.count} 包记录，相关统计会一并更新。</p><div className="dialog-actions"><button className="simple-button" onClick={() => setDialog({ kind: 'details', record: dialog.record, returnToCycle: dialog.returnToCycle })}>取消</button><button className="gold-button" disabled={busy} onClick={removeRecord}>确认删除</button></div></Modal> : null}
     {dialog?.kind === 'queue' ? <PendingPacks pending={pending} expansions={expansions} checked={checked} setChecked={setChecked} expansionId={dialog.expansionId} setExpansionId={expansionId => setDialog(previous => ({ ...previous, expansionId }))} busy={busy} onConfirm={() => confirmQueue()} onDiscard={() => confirmQueue(true)} onClose={() => setDialog(null)} /> : null}
+    {seriesMenu && <RecordContextMenu title={seriesMenu.series.set} subtitle={PACK_TYPES[seriesMenu.series.type]} x={seriesMenu.x} y={seriesMenu.y} actions={seriesActions(seriesMenu.series)} onClose={() => setSeriesMenu(null)} />}
   </section>;
 }
 

@@ -118,6 +118,12 @@ export default function useDecks({ cards, cardReferences = [], onBegin, onNotice
     saveCode(deck, code) {
       return mutate('decks/save', { deck: { ...deck, code } }, () => {});
     },
+    renameDeck(deck, name) {
+      return mutate('decks/save', { deck: { ...deck, name } }, () => {
+        setDraft(current => current?.id === deck.id ? { ...current, name } : current);
+        onNotice('套牌名称已保存。');
+      });
+    },
     importDecks(values) {
       return mutate('decks/import', { decks: values.map(deck => ({ ...deck, code: encodeDeck(deck) })) }, data => {
         setDialog(null);

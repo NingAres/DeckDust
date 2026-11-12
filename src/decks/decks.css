@@ -255,3 +255,19 @@
 .deck-collection-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 3px; color: #614522; font-size: 11px; }
 .deck-collection-toolbar .simple-button { flex: none; padding: 5px 8px; font-size: 11px; }
 @media(max-width:850px) { .collection-building #collection-view .paper { grid-template-rows: 66px auto minmax(0,1fr) 38px; } .deck-collection-toolbar { flex-wrap: wrap; } }
+.decks-library .saved-name-input {
+  min-width: 0;
+  width: 100%;
+  padding: 2px 4px;
+  border: 1px solid #a9874e;
+  border-radius: 3px;
+  background: #f3e5c5;
+  color: #382715;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  outline: 2px solid #b89654;
+  animation: saved-name-enter 180ms cubic-bezier(.2,.75,.25,1);
+}
+@keyframes saved-name-enter { from { opacity: .2; } to { opacity: 1; } }
+@media(prefers-reduced-motion:reduce) { .decks-library .saved-name-input { animation: none; } }

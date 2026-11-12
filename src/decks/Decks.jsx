@@ -1,12 +1,14 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import ClassEmblem from '../components/ClassEmblem.jsx';
-import { deckClass, deckStats, encodeDeck, FORMATS, HERO_ART } from './model.js';
+import { allocateDeckVariants, deckClass, deckStats, encodeDeck, FORMATS, HERO_ART } from './model.js';
 import Icon from '../components/Icon.jsx';
 import UnavailableState from '../components/UnavailableState.jsx';
 import PackSymbol from '../packs/PackSymbol.jsx';
 import DeckClassArt from './DeckClassArt.jsx';
 import PackCardArt from '../packs/PackCardArt.jsx';
-import { request } from '../collection/api.js';
+import { request, saveDeckExport } from '../collection/api.js';
+import { exportDeckPng } from './deckPngExport.js';
+import RecordContextMenu from '../packs/RecordContextMenu.jsx';
 import './decks.css';
 
 function DustBreakdown({ kind, value, entries, craftEntries = [], loading }) {
@@ -159,6 +161,64 @@ function DustBreakdown({ kind, value, entries, craftEntries = [], loading }) {
 
 export default function Decks({ cards, cardReferences = [], loading, collectionError = '', onRetryCollection, controller, onNotice }) {
   const { decks, draft, ready, busy, refreshing, refreshDecks, error, setDialog } = controller;
+  const [contextMenu, setContextMenu] = useState(null);
+  const [renaming, setRenaming] = useState(null);
+  const [exporting, setExporting] = useState(false);
+  const nameInput = useRef(null);
+  useLayoutEffect(() => {
+    if (renaming) {
+      nameInput.current?.focus();
+      nameInput.current?.select();
+    }
+  }, [renaming?.id]);
+  async function saveName(deck, value) {
+    setRenaming(null);
+    const name = value.trim();
+    if (!name || name === deck.name) return;
+    const result = await controller.renameDeck(deck, name);
+    if (!result) setRenaming({ id: deck.id, name });
+  }
+  async function copyCode(deck) {
+    try {
+      const code = deck.code || encodeDeck(deck);
+      await navigator.clipboard.writeText(code);
+      if (!deck.code) {
+        const saved = await controller.saveCode(deck, code);
+        onNotice(saved ? '卡组代码已复制并保存。' : '卡组代码已复制，但保存失败。');
+      } else onNotice('卡组代码已复制。');
+    } catch { onNotice('卡组代码复制失败，请重试。'); }
+  }
+  async function saveFile(deck, format) {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const knownCards = [...cards, ...cardReferences];
+      const ids = [...new Set([deck.hero, ...deck.entries.map(entry => entry.id), ...(deck.sideboards || []).map(entry => entry.id)])]
+        .filter(id => Number.isSafeInteger(id) && !knownCards.some(card => card.dbfId === id));
+      const references = ids.length
+        ? await request(`cards/lookup?ids=${ids.join(',')}`).then(result => result.cards).catch(() => [])
+        : [];
+      const exportCards = [...knownCards, ...references];
+      if (format === 'png') await exportDeckPng(deck, exportCards);
+      else {
+        const name = `${deck.name.replace(/[<>:"/\\|?*]/g, '_')}.json`;
+        const blob = new Blob([JSON.stringify({ decks: [allocateDeckVariants(deck, exportCards)] }, null, 2)], { type: 'application/json' });
+        await saveDeckExport(name, blob);
+      }
+      onNotice(`套牌 ${format.toUpperCase()} 已保存。`);
+    } catch (error) { onNotice(error.message || '套牌导出失败。'); }
+    finally { setExporting(false); }
+  }
+  function deckActions(deck) {
+    return [
+      { label: '编辑卡组名称', icon: 'pencil', disabled: busy, run: () => setRenaming({ id: deck.id, name: deck.name }) },
+      { label: '构筑套牌', icon: 'pencil', disabled: busy || loading, run: () => controller.start(structuredClone(deck)) },
+      { label: '复制代码', icon: 'copy', disabled: busy, run: () => copyCode(deck) },
+      { label: '保存为图片', icon: 'export', disabled: exporting, run: () => saveFile(deck, 'png') },
+      { label: '保存为 JSON', icon: 'export', disabled: exporting, run: () => saveFile(deck, 'json') },
+      { label: '删除', icon: 'trash', danger: true, disabled: busy, run: () => setDialog({ type: 'delete', deck }) },
+    ];
+  }
   const unavailableMessage = collectionError || (!ready ? error : '');
   async function openExportFolder() {
     try { await request('deck-exports/open', {}); }
@@ -175,10 +235,19 @@ export default function Decks({ cards, cardReferences = [], loading, collectionE
     {!ready ? <p role="status">正在读取本机套牌…</p> : !decks.length ? <div className="deck-empty"><h3>开始你的第一套构筑</h3><p>选择职业新建，或通过卡组代码 / JSON 文件导入。</p><small>新建后会进入我的收藏，直接点卡添加。</small></div> : <div className="saved-list">{decks.map(deck => {
       const stats = deckStats(deck, cards), cls = deckClass(deck, [...cards, ...cardReferences]);
       const ownershipState = stats.missing > 0 ? 'is-missing' : stats.owned >= stats.limit ? 'is-complete' : 'is-partial';
-      return <article key={deck.id} className={`saved-card ${draft?.id === deck.id ? 'selected' : ''}`}>
+      return <article key={deck.id} className={`saved-card ${draft?.id === deck.id ? 'selected' : ''}`} onContextMenu={event => {
+        if (event.target.closest('input')) return;
+        event.preventDefault();
+        setContextMenu({ deck, x: event.clientX, y: event.clientY });
+      }}>
         <DeckClassArt cardId={cardReferences.find(card => card.dbfId === deck.hero)?.id || HERO_ART[cls]} fallbackCardId={HERO_ART[cls]} className="saved-class-art" />
         <header className="saved-head"><ClassEmblem cardClass={cls} /><div className="saved-title">
-          <div className="saved-title-line"><h3>{deck.name}</h3><div className="saved-tags" aria-label="卡组模式与进度">
+          <div className="saved-title-line">{renaming?.id === deck.id ? <input ref={nameInput} className="saved-name-input" aria-label="卡组名称" defaultValue={renaming.name} maxLength={80}
+            onBlur={event => saveName(deck, event.target.value)} onKeyDown={event => {
+              if (event.nativeEvent.isComposing) return;
+              if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.blur(); }
+              if (event.key === 'Escape') { event.preventDefault(); setRenaming(null); }
+            }} /> : <h3>{deck.name}</h3>}<div className="saved-tags" aria-label="卡组模式与进度">
             <span className={`saved-tag saved-tag-format format-${deck.format}`}>{FORMATS[deck.format]}</span>
             <span className={`saved-tag saved-tag-progress ${ownershipState}`}
               aria-label={stats.missing > 0 ? `已拥有 ${stats.owned} 张，卡组上限 ${stats.limit} 张，缺少 ${stats.missing} 张` : `已拥有 ${stats.owned} 张，卡组上限 ${stats.limit} 张`}
@@ -189,22 +258,14 @@ export default function Decks({ cards, cardReferences = [], loading, collectionE
         </div></header>
         <div className="dust-grid"><DustBreakdown kind="missing" value={stats.dust} entries={stats.missingCards} loading={loading} /><DustBreakdown kind="golden" value={stats.fullDust} entries={stats.goldenCards} craftEntries={stats.goldenCraftCards} loading={loading} /></div>
         <div className="saved-actions">
-          <button className="saved-icon-action" aria-label="构筑" title="构筑" disabled={busy || loading} onClick={() => controller.start(structuredClone(deck))}><Icon name="build" /></button>
-          <button className="saved-icon-action" aria-label="复制卡组代码" title="复制卡组代码" onClick={async () => {
-            const code = deck.code || encodeDeck(deck);
-            try {
-              await navigator.clipboard.writeText(code);
-              if (!deck.code) {
-                const saved = await controller.saveCode(deck, code);
-                onNotice(saved ? '卡组代码已复制并保存。' : '卡组代码已复制，但保存失败。');
-              } else onNotice('卡组代码已复制。');
-            } catch { onNotice('复制失败，请从“导出”中选中代码手动复制。'); }
-          }}><Icon name="copy" /></button>
+          <button className="saved-icon-action" aria-label="构筑" title="构筑" disabled={busy || loading} onClick={() => controller.start(structuredClone(deck))}><Icon name="pencil" /></button>
+          <button className="saved-icon-action" aria-label="复制卡组代码" title="复制卡组代码" onClick={() => copyCode(deck)}><Icon name="copy" /></button>
           <button className="saved-icon-action" aria-label="导出" title="导出" onClick={() => setDialog({ type: 'export', deck })}><Icon name="export" /></button>
           <button className="saved-icon-action danger" aria-label="删除" title="删除" disabled={busy} onClick={() => setDialog({ type: 'delete', deck })}><Icon name="trash" /></button>
         </div>
       </article>;
     })}</div>}
+    {contextMenu && <RecordContextMenu title={contextMenu.deck.name} x={contextMenu.x} y={contextMenu.y} actions={deckActions(contextMenu.deck)} onClose={() => setContextMenu(null)} />}
   </section>;
 }
 

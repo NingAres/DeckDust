@@ -535,6 +535,7 @@
 .pack-record-context-menu button:hover,.pack-record-context-menu button:focus-visible{background:#b89a6233;outline:none}
 .pack-record-context-menu button:focus-visible{box-shadow:inset 0 0 0 1px #9b783d}
 .pack-record-context-menu button:disabled{opacity:.4;cursor:default;background:transparent;box-shadow:none}
+.pack-record-context-menu button.danger{color:#a13b28}
 .pack-record-context-menu button>svg{width:16px;height:16px;flex:none}
 .pack-record-context-menu button>svg:last-child{margin-left:auto;width:12px;height:12px;opacity:.55}
 @keyframes pack-record-menu-enter{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}

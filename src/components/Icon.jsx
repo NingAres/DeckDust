@@ -1,4 +1,5 @@
 const paths = {
+  pencil: <><path d="m15 4 5 5M4 15 15.5 3.5a2.1 2.1 0 0 1 3 0l2 2a2.1 2.1 0 0 1 0 3L9 20l-6 1 1-6Z" /></>,
   folder: <path d="M3 7V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />,
   crown: <><path d="m4 8 4.5 3L12 5l3.5 6L20 8l-2 10H6L4 8Z" fill="currentColor" stroke="none"/><path d="M7 21h10" strokeWidth="2.2"/></>,
   trophy: <><path d="M7 3h10v5a5 5 0 0 1-10 0V3ZM7 5H4v2a4 4 0 0 0 4 4m9-6h3v2a4 4 0 0 1-4 4M12 13v5m-4 3h8m-7-3h6v3"/></>,
