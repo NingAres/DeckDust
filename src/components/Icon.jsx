@@ -1,4 +1,7 @@
 const paths = {
+  rename: <><path d="M15 3h4m-2 0v18m-2 0h4M12 7H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h7M7 12h5M21 8v8" /></>,
+  image: <><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8" cy="8" r="1.5" /><path d="m21 15-5-5L5 21M3 16l4-4 4 4" /></>,
+  file: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm0 0v6h6M8 13h8M8 17h6" /></>,
   pencil: <><path d="m15 4 5 5M4 15 15.5 3.5a2.1 2.1 0 0 1 3 0l2 2a2.1 2.1 0 0 1 0 3L9 20l-6 1 1-6Z" /></>,
   folder: <path d="M3 7V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />,
   crown: <><path d="m4 8 4.5 3L12 5l3.5 6L20 8l-2 10H6L4 8Z" fill="currentColor" stroke="none"/><path d="M7 21h10" strokeWidth="2.2"/></>,

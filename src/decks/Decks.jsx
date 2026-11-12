@@ -211,11 +211,11 @@ export default function Decks({ cards, cardReferences = [], loading, collectionE
   }
   function deckActions(deck) {
     return [
-      { label: '编辑卡组名称', icon: 'pencil', disabled: busy, run: () => setRenaming({ id: deck.id, name: deck.name }) },
+      { label: '编辑卡组名称', icon: 'rename', disabled: busy, run: () => setRenaming({ id: deck.id, name: deck.name }) },
       { label: '构筑套牌', icon: 'pencil', disabled: busy || loading, run: () => controller.start(structuredClone(deck)) },
       { label: '复制代码', icon: 'copy', disabled: busy, run: () => copyCode(deck) },
-      { label: '保存为图片', icon: 'export', disabled: exporting, run: () => saveFile(deck, 'png') },
-      { label: '保存为 JSON', icon: 'export', disabled: exporting, run: () => saveFile(deck, 'json') },
+      { label: '保存为图片', icon: 'image', disabled: exporting, run: () => saveFile(deck, 'png') },
+      { label: '保存为 JSON', icon: 'file', disabled: exporting, run: () => saveFile(deck, 'json') },
       { label: '删除', icon: 'trash', danger: true, disabled: busy, run: () => setDialog({ type: 'delete', deck }) },
     ];
   }
