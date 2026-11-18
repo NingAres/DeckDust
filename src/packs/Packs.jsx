@@ -30,7 +30,7 @@ function Metrics({ records, set, type }) {
       <div className="pack-metric" key={label}>{icon === 'pack' ? <PackArt set={set} type={type || 'normal'} assetName={records.find(record => record.set === set)?.artName} /> : <Gem rarity={icon} />}<div><span>{label}</span><strong>{fmt(value)}<small>{unit}</small></strong></div></div>)}
   </div>;
 }
-function PityPanel({ set, type, records, onChooseSet }) {
+function PityPanel({ set, type, records }) {
   const panel = useRef(null), previous = useRef({ set, type });
   const selectedType = type || 'normal';
   const rows = set ? pityPreview(records, set, selectedType) : [];
@@ -41,7 +41,7 @@ function PityPanel({ set, type, records, onChooseSet }) {
     { duration: 320, easing: 'ease-in-out' });
   }, [set, type]);
   return <section ref={panel} className="pack-pity"><div className="pack-section-heading"><h2>保底进度</h2></div>
-    {!set ? <div className="pack-pity-empty"><Gem /><h3>先选择一个扩展包</h3><p>不同扩展包与卡包类型分别计算，全部记录没有统一保底。</p><button className="simple-button" onClick={onChooseSet}>选择扩展包</button></div> : <>
+    {!set ? <div className="pack-pity-empty"><Gem /><h3>暂无选中的开包记录</h3><p>选中开包明细后，显示对应扩展包与卡包类型的保底进度。</p></div> : <>
       <p className="pack-muted">{set} · {PACK_TYPES[selectedType]}</p>
       {rows.map(({ quality, total, since }) => <div className="pity-item" key={quality}><div><span><QualitySymbol quality={quality} />{QUALITY_FIELDS.find(([key]) => key === quality)?.[1]}</span><b className={`pity-count quality-${quality}`}>{since}<small> / {total}</small></b></div>
         <div className={`pity-track ${quality === 'epic' ? 'epic' : ''}`} role="meter" aria-label={`${quality}保底进度`} aria-valuenow={Math.min(since, total)} aria-valuemin={0} aria-valuemax={total}><span style={{ width: `${Math.min(100, since / total * 100)}%` }} /></div>
@@ -174,7 +174,7 @@ export default function Packs({ view, cards, onNavigate, onNotice }) {
     </div>{isRecords ? <aside className="pack-sidebar"><section className="pack-monitor-panel"><div className="pack-section-heading"><h2>日志监控</h2><button className={`pack-switch ${monitor ? 'on' : ''}`} role="switch" aria-label="切换日志监控" aria-checked={monitor} disabled={busy} onClick={toggleMonitor}><span /></button></div>
       <div className="pack-monitor-status"><span className={`monitor-dot ${monitor ? 'on' : ''}`} /><strong>{api.monitor.message.replace(/Hearthstone_(\d{4})_(\d{2})_(\d{2})_(\d{2})_(\d{2})_(\d{2})[\\/]Net\.log/, '$2/$3 $4:$5:$6')}</strong></div><p>日志增量识别，确认后加入记录。<br />待确认卡包会保留到重启之后。</p>
       <button className={`pack-queue-button ${pending.length ? 'has-pending' : ''}`} onClick={() => { setChecked(pending.map(event => event.id)); setDialog({ kind: 'queue', expansionId: expansions.find(item => item.name === set && (!type || item.defaultType === type))?.id || expansions[0]?.id || '' }); }}><PackArt set="" type="normal" className="pack-queue-art" /><span>待确认卡包</span><b>{pending.length}</b><Icon name="right" /></button>
-    </section><PityPanel set={set} type={type} records={records} onChooseSet={() => { setSet(setNames[0]); setType("normal"); }} />{!set ? <figure className="pack-sidebar-art" aria-hidden="true"><img src="/assets/ui-skin/pack-tavern-vignette.webp" alt="" loading="lazy" /></figure> : null}<section className="pack-sidebar-note"><h3>{isRecords ? '留住每一次惊喜' : isAnalysis ? '读懂这些数字' : '你的开包档案'}</h3><p>{isRecords ? '自动识别与手动录入汇入同一本记录。点击历史记录，可查看数量、来源和卡牌详情。' : '传说、史诗均合并各品质统计。筛选范围会同时作用于指标、图表和表格。'}</p></section></aside> : null}</div>
+    </section><PityPanel set={active?.set} type={active?.type} records={records} />{!active ? <figure className="pack-sidebar-art" aria-hidden="true"><img src="/assets/ui-skin/pack-tavern-vignette.webp" alt="" loading="lazy" /></figure> : null}<section className="pack-sidebar-note"><h3>{isRecords ? '留住每一次惊喜' : isAnalysis ? '读懂这些数字' : '你的开包档案'}</h3><p>{isRecords ? '自动识别与手动录入汇入同一本记录。点击历史记录，可查看数量、来源和卡牌详情。' : '传说、史诗均合并各品质统计。筛选范围会同时作用于指标、图表和表格。'}</p></section></aside> : null}</div>
     {dialog?.kind === 'recent' ? <RecentPacks records={api.recentRecords.filter(record => (!set || record.set === set) && (!type || record.type === type))} cards={cards} onClose={() => setDialog(null)} /> : null}
     {dialog?.kind === 'cycle' ? <Modal title="合并区间明细" className="pack-dialog pack-cycle-dialog" onClose={() => setDialog(null)}><div className="pack-section-heading"><h3>{dialog.cycle.set} · {PACK_TYPES[dialog.cycle.type]}</h3><span className={`cycle-state ${dialog.cycle.closed ? 'closed' : 'open'}`}>{dialog.cycle.closed ? '已结束' : '合并中'}</span></div><p className="pack-muted">{dialog.cycle.start.replace('T', ' ')} 至 {dialog.cycle.date.replace('T', ' ')} · {dialog.cycle.count} 包 · {dialog.cycle.records.length} 次录入</p><HistoryTable recordActions={recordActions} catalog={cards} records={dialog.cycle.records} onSelect={() => {}} fillRows animatePages rowHeight={58} onDetails={record => setDialog({ kind: 'details', record, returnToCycle: dialog.cycle })} /><div className="dialog-actions"><button className="gold-button" onClick={() => setDialog(null)}>完成</button></div></Modal> : null}
     {dialog?.kind === 'expansions' ? <ExpansionManager expansions={expansions} records={records} onSave={saveExpansion} onClose={() => setDialog(null)} /> : null}
