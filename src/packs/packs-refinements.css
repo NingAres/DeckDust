@@ -185,10 +185,6 @@
 .pack-history-pagination>span{margin-right:auto}.pack-history-pagination>div{display:flex;align-items:center;gap:7px}.pack-history-pagination b{font-size:10px;font-weight:500;min-width:34px;text-align:center}.pack-history-pagination select{height:26px;border:1px solid #b59b69;border-radius:4px;background:#e9d9b5;color:#7d5d32;padding:2px 6px;font-size:10px}.pack-history-pagination .pack-scroll-button{height:25px;width:26px}
 .pack-pity .pity-count.quality-goldLegendary{color:#b95b0c}
 .pack-pity .pity-count.quality-signature{color:#157c83}
-.pity-track[data-quality="signature"] {
-  border-color: #638e89;
-  background: #157c8320;
-}
 .pity-track[data-quality="signature"] > span {
   background: linear-gradient(#71c3bc, #157c83);
   border-color: #246e72;
