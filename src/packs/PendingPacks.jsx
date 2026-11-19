@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Modal from '../components/Modal.jsx';
 import CardArt from './PackCardArt.jsx';
 import PackArt from './PackArt.jsx';
+import PackExpansionOptions from './PackExpansionOptions.jsx';
 import { QualitySymbol } from './PackSymbol.jsx';
 import { PACK_TYPES, QUALITY_FIELDS } from './demo.js';
 import Icon from '../components/Icon.jsx';
@@ -31,13 +32,7 @@ export default function PendingPacks({ pending, expansions, checked, setChecked,
           <small>{choosingExpansion ? '收起' : '更换'}</small>
         </button>
         <div className={`pending-expansion-disclosure ${choosingExpansion ? 'open' : ''}`} aria-hidden={!choosingExpansion} inert={!choosingExpansion}>
-          <div className="pending-expansion-grid" aria-label="选择所属卡包">
-            {expansions.map(item => <button type="button" key={item.id} className="pending-expansion-option" aria-pressed={expansionId === item.id} onClick={() => { setExpansionId(item.id); setChoosingExpansion(false); }}>
-              <PackArt set={item.name} type={item.defaultType} assetName={item.artName} />
-              <span className="pending-expansion-name">{item.name}</span>
-              <small>{PACK_TYPES[item.defaultType]}</small>
-            </button>)}
-          </div>
+          <PackExpansionOptions expansions={expansions} selectedId={expansionId} onSelect={item => { setExpansionId(item.id); setChoosingExpansion(false); }} />
         </div>
       </> : <p className="pack-muted">请先在“扩展包管理”中添加卡包。</p>}
     </fieldset>}

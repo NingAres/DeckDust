@@ -463,7 +463,37 @@
 /* Compact pity indicators: keep only the quality, count and progress bar. */
 .pack-pity{padding-block:10px 12px}
 .pack-pity>.pack-section-heading{min-height:32px;padding-bottom:5px}
-.pack-pity>.pack-muted{margin:7px 0 0}
+.pack-pity-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin: 3px 0 5px;
+  padding: 5px 0 10px;
+  border-bottom: 1px solid #ad925e44;
+}
+.pack-pity-identity > .pack-expansion-art {
+  flex: none;
+  width: 36px;
+  height: 48px;
+}
+.pack-pity-identity > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.pack-pity-identity strong {
+  color: #51371d;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.pack-pity-identity > div > span {
+  color: #87663e;
+  font-size: 10px;
+  line-height: 1.4;
+}
 .pack-pity .pity-item{padding:7px 0 6px}
 .pack-pity .pity-item>div:first-child{font-size:10px;line-height:1.2}
 .pack-pity .pity-item>div>span{gap:5px}
@@ -542,3 +572,58 @@
 @media(prefers-reduced-motion:reduce){.pack-record-context-menu{animation:none}}
 
 .pack-actions .pack-add-icon{font-size:18px;font-weight:750;line-height:1}
+.pack-expansion-filter {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  flex: 1;
+}
+.pack-expansion-filter > span {
+  color: #775a32;
+  font-size: 10px;
+  font-weight: 700;
+}
+.pack-expansion-filter-trigger {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  height: 36px;
+  padding: 2px 9px;
+  border: 1px solid #a78750;
+  border-radius: 5px;
+  background: linear-gradient(#f4e6c5, #dec89a);
+  color: #473019;
+  box-shadow: inset 0 1px 3px #76552c16;
+  text-align: left;
+  cursor: pointer;
+}
+.pack-expansion-filter-trigger > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.pack-expansion-filter-trigger > svg {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin-left: auto;
+  transform: rotate(90deg);
+}
+.pack-expansion-filter-trigger:focus-visible {
+  outline: 2px solid #258bd7;
+  outline-offset: 2px;
+}
+.modal.pack-expansion-filter-dialog {
+  width: min(740px, calc(100vw - 32px));
+}
+.pack-expansion-filter-dialog > .pending-expansion-grid {
+  max-height: min(65vh, 620px);
+}
+@media (max-width: 600px) {
+  .pack-expansion-filter-dialog > .pending-expansion-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
