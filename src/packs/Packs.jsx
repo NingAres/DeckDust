@@ -51,7 +51,7 @@ function PityPanel({ set, type, assetName, records }) {
         </div>
       </div>
       {rows.map(({ quality, total, since }) => <div className="pity-item" key={quality}><div><span><QualitySymbol quality={quality} />{QUALITY_FIELDS.find(([key]) => key === quality)?.[1]}</span><b className={`pity-count quality-${quality}`}>{since}<small> / {total}</small></b></div>
-        <div className={`pity-track ${quality === 'epic' ? 'epic' : ''}`} role="meter" aria-label={`${quality}保底进度`} aria-valuenow={Math.min(since, total)} aria-valuemin={0} aria-valuemax={total}><span style={{ width: `${Math.min(100, since / total * 100)}%` }} /></div>
+        <div className={`pity-track ${quality === 'epic' ? 'epic' : ''}`} data-quality={quality} role="meter" aria-label={`${quality}保底进度`} aria-valuenow={Math.min(since, total)} aria-valuemin={0} aria-valuemax={total}><span style={{ width: `${Math.min(100, since / total * 100)}%` }} /></div>
       </div>)}
     </>}
   </section>;

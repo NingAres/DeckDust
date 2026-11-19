@@ -48,7 +48,7 @@ export default function PackPityPreview({ record, records, children }) {
       <header><div><strong>{record.set}</strong><small>{PACK_TYPES[record.type]}</small></div><PackArt set={record.set} type={record.type} assetName={record.artName} title="" /></header>
       <div className="pack-pity-hover-rows">{rows.map(({ quality, total, since }) => <div className="pack-pity-hover-row" key={quality}>
         <div><span><QualitySymbol quality={quality} />{QUALITY_FIELDS.find(([key]) => key === quality)?.[1]}</span><b>{since}<small> / {total}</small></b></div>
-        <div className={`pity-track ${quality === 'epic' ? 'epic' : ''}`} role="meter" aria-label={`${quality}保底进度`} aria-valuenow={Math.min(since, total)} aria-valuemin={0} aria-valuemax={total}><span style={{ width: `${Math.min(100, since / total * 100)}%` }} /></div>
+        <div className={`pity-track ${quality === 'epic' ? 'epic' : ''}`} data-quality={quality} role="meter" aria-label={`${quality}保底进度`} aria-valuenow={Math.min(since, total)} aria-valuemin={0} aria-valuemax={total}><span style={{ width: `${Math.min(100, since / total * 100)}%` }} /></div>
       </div>)}</div>
     </div>, document.body) : null}
   </span>;
